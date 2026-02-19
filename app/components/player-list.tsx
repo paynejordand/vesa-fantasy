@@ -1,23 +1,15 @@
 "use client";
 import { Player, players } from "../db/dummy";
-import { useState } from "react";
 
-export function PlayerList() {
-  const maxPlayers = 3;
-  const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
-
-  function handlePlayerClick(player: Player) {
-    console.log("Player clicked:", player);
-    if (selectedPlayers.includes(player)) {
-      setSelectedPlayers(selectedPlayers.filter((p) => p !== player));
-      return;
-    }
-    if (selectedPlayers.length >= maxPlayers) {
-      return;
-    }
-    setSelectedPlayers([...selectedPlayers, player]);
-  }
-
+export function PlayerList({
+  maxPlayers,
+  selectedPlayers,
+  selectPlayerAction,
+}: {
+  maxPlayers: number;
+  selectedPlayers: Player[];
+  selectPlayerAction: (player: Player) => void;
+}) {
   return (
     <h1 className="text-2xl font-bold mb-4">
       Select Players: {maxPlayers - selectedPlayers.length} Remaining
@@ -40,12 +32,10 @@ export function PlayerList() {
               >
                 {player.name}
               </a>
-              <a className="flex text-sm font-medium">
-                Team: {player.team}
-              </a>
+              <a className="flex text-sm font-medium">Team: {player.team}</a>
               <button
                 className="flex text-white rounded"
-                onClick={() => handlePlayerClick(player)}
+                onClick={() => selectPlayerAction(player)}
               >
                 {selectedPlayers.includes(player) ? "Deselect" : "Select"}
               </button>

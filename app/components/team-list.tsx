@@ -1,15 +1,13 @@
 "use client";
 import { Team, teams } from "../db/dummy";
-import { useState } from "react";
 
-export function TeamList() {
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-
-  function handleTeamClick(team: Team) {
-    console.log("Team clicked:", team);
-    setSelectedTeam(selectedTeam === team ? null : team);
-  }
-
+export function TeamList({
+  selectedTeam,
+  selectTeamAction,
+}: {
+  selectedTeam: Team | null;
+  selectTeamAction: (team: Team) => void;
+}) {
   return (
     <h1 className="text-2xl font-bold mb-4">
       Select a Team
@@ -26,7 +24,7 @@ export function TeamList() {
               <a className="flex">{team.name}</a>
               <button
                 className="flex text-white rounded"
-                onClick={() => handleTeamClick(team)}
+                onClick={() => selectTeamAction(team)}
               >
                 {selectedTeam === team ? "Deselect" : "Select"}
               </button>
