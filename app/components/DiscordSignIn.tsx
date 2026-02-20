@@ -1,5 +1,5 @@
 import { signIn } from "@/auth";
-import discordIcon from "../../public/discord.svg";
+import discordIcon from "@/public/discord.svg";
 import Image from "next/image";
 
 export function DiscordSignIn() {

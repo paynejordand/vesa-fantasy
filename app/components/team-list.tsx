@@ -1,5 +1,4 @@
-"use client";
-import { Team, teams } from "../db/dummy";
+import { Team, teams } from "@/app/db/dummy";
 
 export function TeamList({
   selectedTeam,

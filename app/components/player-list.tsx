@@ -1,5 +1,4 @@
-"use client";
-import { Player, players } from "../db/dummy";
+import { Player, players } from "@/app/db/dummy";
 
 export function PlayerList({
   maxPlayers,
