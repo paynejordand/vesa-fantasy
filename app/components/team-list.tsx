@@ -1,9 +1,11 @@
-import { Team, teams } from "@/app/db/dummy";
+import { Team } from "@/app/db/definitions";
 
 export function TeamList({
+  allTeams,
   selectedTeam,
   selectTeamAction,
 }: {
+  allTeams: Team[];
   selectedTeam: Team | null;
   selectTeamAction: (team: Team) => void;
 }) {
@@ -11,16 +13,16 @@ export function TeamList({
     <h1 className="text-2xl font-bold mb-4">
       Select a Team
       <div className="container flex flex-wrap gap-4">
-        {teams.map((team) => (
+        {allTeams.map((team) => (
           <div
             className="border p-4 rounded-lg"
-            key={team.id}
+            key={team.TeamID}
             style={{
               backgroundColor: selectedTeam === team ? "green" : "black",
             }}
           >
             <div className="container flex flex-col items-center">
-              <a className="flex">{team.name}</a>
+              <a className="flex">{team.Name}</a>
               <button
                 className="flex text-white rounded"
                 onClick={() => selectTeamAction(team)}

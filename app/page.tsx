@@ -1,5 +1,7 @@
 import { DraftComponent } from "@/app/components/draft";
 import { auth } from "@/auth";
+import { LeaderboardComponent } from "@/app/components/leaderboard";
+import { getPlayersByDivision, getTeamsByDivision } from "@/app/db/data";
 
 export default async function Page() {
   const session = await auth();
@@ -12,9 +14,14 @@ export default async function Page() {
       </div>
     );
   }
-  return (
+  const players = await getPlayersByDivision(1);
+  if (players === null) return <div> No players in this division</div>
+  const teams = await getTeamsByDivision(1);
+  if (teams === null) return <div> No teams in this division</div>
+    return (
     <div>
-      <DraftComponent />
+      <DraftComponent players={players} teams={teams}/>
+      <LeaderboardComponent />
     </div>
   );
 }
