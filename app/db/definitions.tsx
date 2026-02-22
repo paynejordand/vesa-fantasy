@@ -43,6 +43,20 @@ export interface LeaderboardWithPicks extends Leaderboard {
   Picks: Pick[];
 }
 
+export interface LeaderboardWithPickNames extends Leaderboard {
+  Picks: {
+    PickID: string;
+    SubmittedOn: Date;
+    SubmittedBy: string;
+    Score: number;
+    LeaderboardID: string | null;
+    TeamName: string;
+    Player1Name: string;
+    Player2Name: string;
+    Player3Name: string;
+  }[];
+}
+
 export interface PlayerStat {
   damageDealt: number;
   assists: number;
@@ -51,3 +65,9 @@ export interface PlayerStat {
   respawnsGiven: number;
   playerId: string;
 };
+
+export interface SessionUser {
+  name: string,
+  image: string, 
+  role: string,
+}

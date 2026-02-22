@@ -1,38 +1,41 @@
 import { Team } from "@/app/db/definitions";
 
+interface TeamListProps {
+  allTeams: Team[];
+  selectedTeam: Team | null;
+  selectTeamAction: (team: Team) => void;
+}
+
 export function TeamList({
   allTeams,
   selectedTeam,
   selectTeamAction,
-}: {
-  allTeams: Team[];
-  selectedTeam: Team | null;
-  selectTeamAction: (team: Team) => void;
-}) {
+}: TeamListProps) {
   return (
-    <h1 className="text-2xl font-bold mb-4">
-      Select a Team
-      <div className="container flex flex-wrap gap-4">
-        {allTeams.map((team) => (
-          <div
-            className="border p-4 rounded-lg"
-            key={team.TeamID}
-            style={{
-              backgroundColor: selectedTeam === team ? "green" : "black",
-            }}
-          >
-            <div className="container flex flex-col items-center">
-              <a className="flex">{team.Name}</a>
-              <button
-                className="flex text-white rounded"
-                onClick={() => selectTeamAction(team)}
-              >
-                {selectedTeam === team ? "Deselect" : "Select"}
-              </button>
+    <section>
+      <h2 className="text-2xl font-bold mb-4">Select a Team</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        {allTeams.map((team) => {
+          const isSelected = selectedTeam?.TeamID === team.TeamID;
+
+          return (
+            <div
+              key={team.TeamID}
+              className={`w-full border p-4 rounded-lg ${isSelected ? "bg-green-600" : "bg-black"}`}
+            >
+              <div className="flex flex-col items-center">
+                <p className="text-lg font-semibold">{team.Name}</p>
+                <button
+                  className="text-white rounded"
+                  onClick={() => selectTeamAction(team)}
+                >
+                  {isSelected ? "Deselect" : "Select"}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-    </h1>
+    </section>
   );
 }

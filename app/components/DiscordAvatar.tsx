@@ -1,13 +1,11 @@
-import { auth } from "@/auth"
+import Image from "next/image"
+import { getUser } from "@/app/lib/dal"
  
 export async function DiscordAvatar() {
-  const session = await auth()
+  const session = await getUser()
  
-  if (!session?.user) return null
- 
+  if (!session) return null
   return (
-    <div>
-      <img src={session.user.image || undefined} alt="User Avatar" width="100" />
-    </div>
+      <Image src={session.image || ""} alt="User Avatar" width={40} height={40} />
   )
 }

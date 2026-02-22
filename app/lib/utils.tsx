@@ -17,3 +17,8 @@ export async function getOverstatStatsFromMatchID(id: string) {
   const overstatData = await (await fetch(apiLink)).json();
   return overstatData;
 }
+
+export function clamp(min: number, max: number, x:number) : number
+{
+  return Math.min(Math.max(x, min), max);
+}

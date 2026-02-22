@@ -1,12 +1,12 @@
+import { useMemo } from "react";
 import { Player, Team } from "@/app/db/definitions";
 
-function findTeamByPlayer(playerID: string | undefined, allTeams: Team[]): Team | undefined {
-  return allTeams.find(
-    (t) =>
-      t.Player1ID === playerID ||
-      t.Player2ID === playerID ||
-      t.Player3ID === playerID,
-  );
+interface PlayerListProps {
+  allPlayers: Player[];
+  allTeams: Team[];
+  maxPlayers: number;
+  selectedPlayers: Player[];
+  selectPlayerAction: (player: Player) => void;
 }
 
 export function PlayerList({
@@ -15,46 +15,57 @@ export function PlayerList({
   maxPlayers,
   selectedPlayers,
   selectPlayerAction,
-}: {
-  allPlayers: Player[];
-  allTeams: Team[];
-  maxPlayers: number;
-  selectedPlayers: Player[];
-  selectPlayerAction: (player: Player) => void;
-}) {
+}: PlayerListProps) {
+  const playerTeamMap = useMemo(() => {
+    const map = new Map<string, Team>();
+    for (const team of allTeams) {
+      if (team.Player1ID) map.set(team.Player1ID, team);
+      if (team.Player2ID) map.set(team.Player2ID, team);
+      if (team.Player3ID) map.set(team.Player3ID, team);
+    }
+    return map;
+  }, [allTeams]);
+
   return (
-    <h1 className="text-2xl font-bold mb-4">
-      Select Players: {maxPlayers - selectedPlayers.length} Remaining
-      <div className="container flex flex-wrap gap-4">
-        {allPlayers.map((player) => (
-          <div
-            className="border p-4 rounded-lg"
-            key={player.PlayerID}
-            style={{
-              backgroundColor: selectedPlayers.includes(player)
-                ? "green"
-                : "black",
-            }}
-          >
-            <div className="container flex flex-col items-center">
-              <a
-                className="flex text-lg font-semibold text-blue-500"
-                href={player.OS_Link}
-                target="_blank"
-              >
-                {player.Name}
-              </a>
-              <a className="flex text-sm font-medium">Team: {findTeamByPlayer(player.PlayerID, allTeams)?.Name}</a>
-              <button
-                className="flex text-white rounded"
-                onClick={() => selectPlayerAction(player)}
-              >
-                {selectedPlayers.includes(player) ? "Deselect" : "Select"}
-              </button>
+    <section>
+      <h2 className="text-2xl font-bold mb-4">
+        Select Players: {maxPlayers - selectedPlayers.length} Remaining
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {allPlayers.map((player) => {
+          const isSelected = selectedPlayers.some(
+            (p) => p.PlayerID === player.PlayerID,
+          );
+          const teamName = playerTeamMap.get(player.PlayerID ?? "")?.Name;
+
+          return (
+            <div
+              key={player.PlayerID}
+              className={`w-full border p-4 rounded-lg ${isSelected ? "bg-green-600" : "bg-black"}`}
+            >
+              <div className="flex flex-col items-center">
+                <a
+                  className="text-lg font-semibold text-blue-500"
+                  href={player.OS_Link}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {player.Name}
+                </a>
+                <p className="text-sm font-medium">
+                  Team: {teamName ?? "Unaffiliated"}
+                </p>
+                <button
+                  className="text-white rounded"
+                  onClick={() => selectPlayerAction(player)}
+                >
+                  {isSelected ? "Deselect" : "Select"}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-    </h1>
+    </section>
   );
 }
