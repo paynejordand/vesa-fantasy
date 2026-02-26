@@ -24,3 +24,26 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer components {
+  .scrollable-table-container {
+    @apply border border-dashed rounded overflow-x-auto;
+  }
+  
+  .scrollable-table {
+    @apply w-full text-base min-w-max;
+  }
+  
+  .scrollable-table th,
+  .scrollable-table td {
+    @apply py-2 pr-4 whitespace-nowrap p-4;
+  }
+  
+  .scrollable-table thead tr {
+    @apply border-b border-zinc-300 dark:border-zinc-700 text-center font-semibold underline;
+  }
+  
+  .scrollable-table tbody tr {
+    @apply border-b border-zinc-100 dark:border-zinc-800 last:border-0 text-center;
+  }
+}

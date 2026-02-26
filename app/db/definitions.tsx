@@ -71,3 +71,11 @@ export interface SessionUser {
   image: string, 
   role: string,
 }
+
+export interface Schedule {
+  ScheduleID: string;
+  Season: number;
+  Week: number;
+  Division: number;
+  GameDate: Date;
+}

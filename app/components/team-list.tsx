@@ -2,7 +2,7 @@ import { Team } from "@/app/db/definitions";
 
 interface TeamListProps {
   allTeams: Team[];
-  selectedTeam: Team | null;
+  selectedTeam: string | null;
   selectTeamAction: (team: Team) => void;
 }
 
@@ -16,7 +16,7 @@ export function TeamList({
       <h2 className="text-2xl font-bold mb-4">Select a Team</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {allTeams.map((team) => {
-          const isSelected = selectedTeam?.TeamID === team.TeamID;
+          const isSelected = selectedTeam === team.TeamID;
 
           return (
             <div

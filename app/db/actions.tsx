@@ -1,7 +1,7 @@
 "use server";
 
 import { sql } from "@/app/db/db";
-import { Team, Player, PlayerStat } from "@/app/db/definitions";
+import { PlayerStat } from "@/app/db/definitions";
 import {
   getPicksByDivisionAndWeek,
   getTeamIDByTeamNameAndDivision,
@@ -20,25 +20,29 @@ import { revalidatePath } from "next/cache";
 import { getUser } from "@/app/lib/dal";
 
 export async function submitDraft(
-  draftedTeam: Team | null,
-  draftedPlayers: Player[],
+  draftedTeam: string | null,
+  draftedPlayers: string[],
   division: number,
   week: number,
 ) {
-  console.log("Submitting selection:", {
-    team: draftedTeam,
-    players: draftedPlayers,
-  });
   try {
     const user = await getUser();
     if (!user) return null;
 
-    const res = await sql`INSERT INTO Fantasy.Pick 
-    (division, week, submittedby, teamid, 
-    player1id, player2id, player3id) 
-    VALUES 
-    (${division}, ${week}, ${user.name}, ${draftedTeam?.TeamID}, 
-    ${draftedPlayers[0].PlayerID}, ${draftedPlayers[1].PlayerID}, ${draftedPlayers[2].PlayerID})`;
+    const res = await sql`
+      INSERT INTO Fantasy.Pick 
+        (division, week, submittedby, teamid, player1id, player2id, player3id) 
+      VALUES 
+        (${division}, ${week}, ${user.name}, ${draftedTeam}, 
+        ${draftedPlayers[0]}, ${draftedPlayers[1]}, ${draftedPlayers[2]})
+      ON CONFLICT (submittedby, division, week)
+      DO UPDATE SET
+        teamid    = EXCLUDED.teamid,
+        player1id = EXCLUDED.player1id,
+        player2id = EXCLUDED.player2id,
+        player3id = EXCLUDED.player3id,
+        submittedon = NOW()
+    `;
     console.log(res);
   } catch (error) {
     console.error("Database error: ", error);
@@ -168,7 +172,7 @@ export async function scoreDraft(
     },
   );
   await insertLeaderboard(division, week, matchLink);
-  revalidatePath(`/leaderboard/match?div=${division}&week=${week}`)
+  revalidatePath(`/leaderboard/match?div=${division}&week=${week}`);
 }
 
 export async function deletePickByUsername(
@@ -184,17 +188,4 @@ export async function deletePickByUsername(
   } finally {
     revalidatePath(`/draft/pick?div=${division}&week=${week}`);
   }
-}
-
-export async function CalculateLeaderboard(formData: FormData) {
-  const rawFormData = {
-    link: formData.get("MatchLink"),
-    division: Number(formData.get("Division")),
-    week: Number(formData.get("Week")),
-  };
-  scoreDraft(
-    rawFormData.division,
-    rawFormData.week,
-    rawFormData.link as string,
-  );
 }

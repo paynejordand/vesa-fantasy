@@ -244,3 +244,34 @@ export async function getLeaderboardByDivisionAndWeek(
     throw new Error("Database failed to retrieve Leaderboard");
   }
 }
+
+export async function getWeeksAndDivisionsFromSchedule(): Promise<
+  { division: number; week: number }[]
+> {
+  try {
+    const rows =
+      await sql`SELECT DISTINCT division, week FROM Fantasy.Schedule ORDER BY division, week`;
+    return rows.map((row) => ({
+      division: row.division,
+      week: row.week,
+    }));
+  } catch (error) {
+    console.error("Database error: ", error);
+    throw new Error("Database failed to retrieve Schedule");
+  }
+}
+
+export async function getMatchStartTimeByDivisionAndWeek(
+  division: number,
+  week: number,
+): Promise<Date | null> {
+  try {
+    const rows =
+      await sql`SELECT gamedate FROM Fantasy.Schedule WHERE division = ${division} AND week = ${week}`;
+    if (rows.length === 0) return null;
+    return rows[0].gamedate;
+  } catch (error) {
+    console.error("Database error: ", error);
+    throw new Error("Database failed to retrieve Match Start Time");
+  }
+}

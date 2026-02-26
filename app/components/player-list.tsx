@@ -5,7 +5,7 @@ interface PlayerListProps {
   allPlayers: Player[];
   allTeams: Team[];
   maxPlayers: number;
-  selectedPlayers: Player[];
+  selectedPlayers: string[];
   selectPlayerAction: (player: Player) => void;
 }
 
@@ -33,9 +33,7 @@ export function PlayerList({
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {allPlayers.map((player) => {
-          const isSelected = selectedPlayers.some(
-            (p) => p.PlayerID === player.PlayerID,
-          );
+          const isSelected = selectedPlayers.some((p) => p === player.PlayerID);
           const teamName = playerTeamMap.get(player.PlayerID ?? "")?.Name;
 
           return (

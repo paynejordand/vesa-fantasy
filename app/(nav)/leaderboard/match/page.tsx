@@ -4,7 +4,6 @@ import { CalcLeaderboardComponent } from "@/app/components/CalcLeaderboardCompon
 import { LeaderboardComponent } from "@/app/components/LeaderboardComponent";
 import { getLeaderboardByDivisionAndWeek } from "@/app/db/data";
 
-
 interface PageProps {
   searchParams: Promise<{
     div?: string;
@@ -26,12 +25,16 @@ export default async function Page({ searchParams }: PageProps) {
   );
 
   return (
-    <div>
-      {user?.role === "Admin" && <CalcLeaderboardComponent division={division} week={weekNumber}/>}
+    <div className="flex flex-col">
       {leaderboard ? (
         <LeaderboardComponent leaderboard={leaderboard} />
       ) : (
-        <p>Uh oh</p>
+        <p className="text-center text-red-600">
+          No leaderboard data available for Div {division}, Week {weekNumber}
+        </p>
+      )}
+      {user?.role === "Admin" && !leaderboard && (
+        <CalcLeaderboardComponent division={division} week={weekNumber} />
       )}
     </div>
   );
