@@ -9,6 +9,12 @@ import {
 import { submitDraft, deletePickByUsername } from "@/app/db/actions";
 import { clamp } from "@/app/lib/utils";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Draft Pick",
+  description: "Pick your favorite players and team.",
+};
 
 interface PageProps {
   searchParams: Promise<{

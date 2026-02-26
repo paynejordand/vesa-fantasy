@@ -1,5 +1,11 @@
 import { getUser } from "@/app/lib/dal";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Login",
+  description: "Sign in with Discord to manage your fantasy team and compete in the VESA Fantasy League!",
+};
 
 export default async function Page() {
   const user = await getUser();

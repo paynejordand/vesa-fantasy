@@ -3,6 +3,13 @@ import { clamp } from "@/app/lib/utils";
 import { CalcLeaderboardComponent } from "@/app/components/CalcLeaderboardComponent";
 import { LeaderboardComponent } from "@/app/components/LeaderboardComponent";
 import { getLeaderboardByDivisionAndWeek } from "@/app/db/data";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Match Leaderboard",
+  description:
+    "Divisional leaderboard showing rankings for this match in the VESA Fantasy League.",
+};
 
 interface PageProps {
   searchParams: Promise<{
