@@ -14,7 +14,7 @@ export default async function Page() {
       <div className="flex justify-center items-center">
         <h1 className="text-2xl text-center">
           <p>
-            This site uses Discord for sign in and to manage your fantasy team.
+            This site uses Discord to sign in and to manage your fantasy picks.
           </p>
           <p>So press that Sign in with Discord button up there in the top right</p>
         </h1>

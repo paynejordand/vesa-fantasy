@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { DiscordSignIn, DiscordSignOut } from "@/app/components/DiscordAccountComponent";
 import vesaLogo from "@/public/VESA-Logo.png"
 import { SessionUser } from "@/app/db/definitions";
+import { Nav } from "@/app/ui/LayoutNav";
 import "@/app/globals.css";
 
 
@@ -34,25 +35,6 @@ function Logo() {
         <Image src={vesaLogo} alt="Vesa Logo" width={100}/>
       </span>
     </Link>
-  );
-}
-
-function Nav() {
-  return (
-    <nav className="flex items-center gap-6">
-      <Link
-        href="/draft"
-        className="text-sm font-medium text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white transition-colors"
-      >
-        Draft
-      </Link>
-      <Link
-        href="/leaderboard"
-        className="text-sm font-medium text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white transition-colors"
-      >
-        Leaderboard
-      </Link>
-    </nav>
   );
 }
 
