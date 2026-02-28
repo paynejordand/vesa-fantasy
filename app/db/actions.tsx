@@ -147,7 +147,7 @@ export async function scoreDraft(
 
       teamStats.players.forEach(async (player) => {
         let score = 0;
-        score += (player.damageDealt / 100) * damageScore;
+        score += player.damageDealt * damageScore;
         score += player.assists * assistScore;
         score += player.knockdowns * knockdownScore;
         score += player.kills * killScore;
