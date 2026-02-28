@@ -6,7 +6,7 @@ import {
   killScore,
   respawnScore,
 } from "@/app/lib/constants";
-import { LocalTime } from "@/app/components/LocalTimeComponent";
+import { LocalTime } from "@/app/components/local-time";
 
 export default function Page() {
   return (
@@ -15,10 +15,6 @@ export default function Page() {
         <h1 className="text-4xl font-bold text-center mb-12 underline">
           WELCOME TO VESA FANTASY
         </h1>
-
-        {/* <div className="flex items-center justify-center">
-          <p>To get started head to the <a href="/draft" className="text-blue-500 hover:underline">Draft</a> page!</p>
-        </div> */}
 
         <div className="space-y-8">
           <div>
@@ -66,11 +62,11 @@ export default function Page() {
                   - Players are scored by their overall stats:
                 </p>
                 <ul className="ml-8 space-y-1">
-                  <li>(damage / 100) * {damageScore}</li>
+                  <li>damage * {damageScore}</li>
                   <li>assists * {assistScore}</li>
                   <li>knockdowns * {knockdownScore}</li>
                   <li>kills * {killScore}</li>
-                  <li>respawnsGiven * {respawnScore}</li>
+                  <li>respawns * {respawnScore}</li>
                 </ul>
               </div>
             </div>

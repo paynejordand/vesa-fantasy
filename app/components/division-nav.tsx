@@ -1,3 +1,4 @@
+import { getWeeksAndDivisionsFromSchedule } from "@/app/db/data";
 import Link from "next/link";
 
 interface DivisionWeek {
@@ -10,8 +11,13 @@ interface DivisionNavProps {
   route: string;
 }
 
+export async function DivisionNavWrapper({ route }: { route: string }) {
+  const divWeeks = await getWeeksAndDivisionsFromSchedule();
+  if (!divWeeks) return <div>Database has no schedule</div>;
+  return <DivisionNav divisionWeeks={divWeeks} route={route} />;
+}
+
 export function DivisionNav({ divisionWeeks, route }: DivisionNavProps) {
-  // Group weeks by division
   const grouped = divisionWeeks.reduce<Record<number, number[]>>(
     (acc, { division, week }) => {
       if (!acc[division]) acc[division] = [];

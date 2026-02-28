@@ -21,7 +21,9 @@ export const placementScores = {
   20: 0,
 };
 
-export const damageScore = 0.2;
+const damageDivider = 100; 
+const damageBase = 0.2;
+export const damageScore = damageBase / damageDivider;
 export const assistScore = 0.5;
 export const knockdownScore = 0.25;
 export const killScore = 0.75;

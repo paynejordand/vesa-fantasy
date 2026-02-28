@@ -46,7 +46,6 @@ export async function submitDraft(
     console.log(res);
   } catch (error) {
     console.error("Database error: ", error);
-    return { message: "Database Error :)" };
   } finally {
     revalidatePath(`/draft/pick?div=${division}&week=${week}`);
   }
@@ -190,7 +189,6 @@ export async function deletePickByUsername(
     await sql`DELETE FROM Fantasy.Pick WHERE submittedby = ${name} AND division = ${division} AND week = ${week}`;
   } catch (e) {
     console.error("Database error: ", e);
-    return { message: "Database Error :)" };
   } finally {
     revalidatePath(`/draft/pick?div=${division}&week=${week}`);
   }

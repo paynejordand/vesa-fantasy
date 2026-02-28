@@ -8,7 +8,7 @@ interface CalcLeaderboardProps {
   division: number;
 }
 
-export function CalcLeaderboardComponent({
+export function CalcLeaderboard({
   division,
   week,
 }: CalcLeaderboardProps) {

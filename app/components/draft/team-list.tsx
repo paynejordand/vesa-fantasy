@@ -23,8 +23,11 @@ export function TeamList({
               key={team.TeamID}
               className={`w-full border p-4 rounded-lg ${isSelected ? "bg-green-600" : "bg-black"}`}
             >
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center justify-between h-20 w-full">
                 <p className="text-lg font-semibold">{team.Name}</p>
+                <p className="text-sm font-medium">
+                  Average Points: {((team.OverallPoints ?? 0) / (team.WeeksPlayed || 1)).toFixed(2)}
+                </p>
                 <button
                   className="text-white rounded"
                   onClick={() => selectTeamAction(team)}

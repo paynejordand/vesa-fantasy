@@ -1,7 +1,7 @@
 "use client";
 
-import { PlayerList } from "@/app/components/player-list";
-import { TeamList } from "@/app/components/team-list";
+import { PlayerList } from "@/app/components/draft/player-list";
+import { TeamList } from "@/app/components/draft/team-list";
 
 import { Team, Player, Pick } from "@/app/db/definitions";
 import { useState } from "react";
@@ -103,8 +103,6 @@ export function DraftComponent({
   return (
     <div className="flex flex-col">
       <main className="flex-1 p-4 flex flex-col gap-6">
-        
-
         <PlayerList
           allPlayers={players}
           allTeams={teams}

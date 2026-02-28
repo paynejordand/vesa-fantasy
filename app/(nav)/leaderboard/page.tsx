@@ -1,4 +1,4 @@
-import { DivisionNavLoader } from "@/app/components/DivisionNavLoader";
+import { DivisionNavWrapper } from "@/app/components/division-nav";
 import { Metadata } from "next";
 export const revalidate = 3600;
 export const metadata: Metadata = {
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
     "Divisional leaderboard showing rankings for each division in the VESA Fantasy League.",
 };
 export default async function Page() {
-  return <DivisionNavLoader route="/leaderboard/match" />;
+  return <DivisionNavWrapper route="/leaderboard/match" />;
 }

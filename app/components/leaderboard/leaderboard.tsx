@@ -13,7 +13,7 @@ function getSortedPlayers(pick: LeaderboardWithPickNames["Picks"][0]) {
   ].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }
 
-export function LeaderboardComponent({
+export function Leaderboard({
   leaderboard,
 }: LeaderboardComponentInterface) {
   const { Division, Week, MatchLink, Picks } = leaderboard;
@@ -53,16 +53,16 @@ export function LeaderboardComponent({
                   <td>{pick.SubmittedBy}</td>
                   <td>{pick.Score}</td>
                   <td>
-                    {pick.TeamName}: {pick.TScore}
+                    {pick.TeamName} ({pick.TScore})
                   </td>
                   <td>
-                    {sortedPlayers[0].name}: {sortedPlayers[0].score}
+                    {sortedPlayers[0].name} ({sortedPlayers[0].score})
                   </td>
                   <td>
-                    {sortedPlayers[1].name}: {sortedPlayers[1].score}
+                    {sortedPlayers[1].name} ({sortedPlayers[1].score})
                   </td>
                   <td>
-                    {sortedPlayers[2].name}: {sortedPlayers[2].score}
+                    {sortedPlayers[2].name} ({sortedPlayers[2].score})
                   </td>
                 </tr>
               );

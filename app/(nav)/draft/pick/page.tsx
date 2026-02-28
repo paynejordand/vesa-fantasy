@@ -1,4 +1,4 @@
-import { DraftComponent } from "@/app/components/DraftComponent";
+import { DraftComponent } from "@/app/components/draft/draft";
 import { getUser } from "@/app/lib/dal";
 import {
   getPlayersByDivision,

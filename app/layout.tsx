@@ -3,10 +3,10 @@ import { getUser } from "@/app/lib/dal"
 import Link from "next/link";
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
-import { DiscordSignIn, DiscordSignOut } from "@/app/components/DiscordAccountComponent";
+import { DiscordSignIn, DiscordSignOut } from "@/app/components/header/discord-account";
 import vesaLogo from "@/public/VESA-Logo.png"
 import { SessionUser } from "@/app/db/definitions";
-import { Nav } from "@/app/ui/LayoutNav";
+import { Nav } from "@/app/components/header/layout-nav";
 import "@/app/globals.css";
 
 

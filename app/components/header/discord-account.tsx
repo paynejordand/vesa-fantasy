@@ -1,7 +1,17 @@
 import { signIn, signOut } from "@/auth";
-import { DiscordAvatar } from "@/app/components/DiscordAvatar";
+import { getUser } from "@/app/lib/dal";
 import discordIcon from "@/public/discord.svg";
 import Image from "next/image";
+
+
+export async function DiscordAvatar() {
+  const session = await getUser();
+
+  if (!session) return null;
+  return (
+    <Image src={session.image || ""} alt="User Avatar" width={40} height={40} />
+  );
+}
 
 export function DiscordSignIn() {
   console.log("uh oh");

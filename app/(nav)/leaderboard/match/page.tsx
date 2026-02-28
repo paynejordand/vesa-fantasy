@@ -1,7 +1,7 @@
 import { getUser } from "@/app/lib/dal";
 import { clamp } from "@/app/lib/utils";
-import { CalcLeaderboardComponent } from "@/app/components/CalcLeaderboardComponent";
-import { LeaderboardComponent } from "@/app/components/LeaderboardComponent";
+import { CalcLeaderboard } from "@/app/components/leaderboard/calc-leaderboard";
+import { Leaderboard } from "@/app/components/leaderboard/leaderboard";
 import { getLeaderboardByDivisionAndWeek } from "@/app/db/data";
 import { Metadata } from "next";
 
@@ -34,14 +34,14 @@ export default async function Page({ searchParams }: PageProps) {
   return (
     <div className="flex flex-col">
       {leaderboard ? (
-        <LeaderboardComponent leaderboard={leaderboard} />
+        <Leaderboard leaderboard={leaderboard} />
       ) : (
         <p className="text-center text-red-600">
           No leaderboard data available for Div {division}, Week {weekNumber}
         </p>
       )}
       {user?.role === "Admin" && !leaderboard && (
-        <CalcLeaderboardComponent division={division} week={weekNumber} />
+        <CalcLeaderboard division={division} week={weekNumber} />
       )}
     </div>
   );

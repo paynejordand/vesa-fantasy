@@ -41,7 +41,7 @@ export function PlayerList({
               key={player.PlayerID}
               className={`w-full border p-4 rounded-lg ${isSelected ? "bg-green-600" : "bg-black"}`}
             >
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center justify-between h-9/10 gap-2">
                 <a
                   className="text-lg font-semibold text-blue-500"
                   href={player.OS_Link}
@@ -53,11 +53,15 @@ export function PlayerList({
                 <p className="text-sm font-medium">
                   Team: {teamName ?? "Unaffiliated"}
                 </p>
+                <p className="text-sm font-medium">
+                  Average Points:{" "}
+                  {((player.OverallPoints ?? 0) / (player.GamesPlayed || 1)).toFixed(2)}
+                </p>
                 <button
                   className="text-white rounded"
                   onClick={() => selectPlayerAction(player)}
                 >
-                  {isSelected ? "Deselect" : "Select"}
+                  {isSelected ? "Remove" : "Select"}
                 </button>
               </div>
             </div>
