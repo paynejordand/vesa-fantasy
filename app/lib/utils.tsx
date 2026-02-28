@@ -6,7 +6,7 @@ export function sanitizeOSLink(url: string): string {
 
 export function parseMatchLinkID(url: string): string {
   const match = url.match(
-    /^https:\/\/overstat\.gg\/tournament\/vesaleague\/(\d+)/,
+    /^https:\/\/overstat\.gg\/tournament\/vesa(?:\w|%20)?league\/(\d+)/i,
   );
   if (!match) throw new Error(`Invalid Match Link: ${url}`);
   return match[1];

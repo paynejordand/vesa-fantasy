@@ -3,7 +3,6 @@
 import { sql } from "@/app/db/db";
 import { PlayerStat } from "@/app/db/definitions";
 import {
-  getPicksByDivisionAndWeek,
   getTeamIDByTeamNameAndDivision,
   getPlayerIDByPlayerLink,
 } from "@/app/db/data";
@@ -73,9 +72,9 @@ export async function handlePlayerScoreInDB(
 ) {
   await sql.transaction([
     sql`UPDATE Fantasy.Pick
-        SET P1Score = CASE WHEN Player1ID = ${id} THEN P1Score + ${score} ELSE P1Score END,
-            P2Score = CASE WHEN Player2ID = ${id} THEN P2Score + ${score} ELSE P2Score END,
-            P3Score = CASE WHEN Player3ID = ${id} THEN P3Score + ${score} ELSE P3Score END
+        SET P1Score = CASE WHEN Player1ID = ${id} THEN ${score} ELSE P1Score END,
+            P2Score = CASE WHEN Player2ID = ${id} THEN ${score} ELSE P2Score END,
+            P3Score = CASE WHEN Player3ID = ${id} THEN ${score} ELSE P3Score END
         WHERE Player1ID = ${id} OR Player2ID = ${id} OR Player3ID = ${id}
         AND week = ${week}`,
     sql`UPDATE Fantasy.Player SET overallpoints = overallpoints + ${score}, gamesplayed = gamesplayed + 1 WHERE playerid = ${id}`,
@@ -109,17 +108,6 @@ export async function scoreDraft(
   const user = await getUser();
   if (user?.role !== "Admin") return null;
 
-  try {
-    const picks = await getPicksByDivisionAndWeek(division, week);
-    if (!picks) {
-      return {
-        message: `No picks for this division (${division}) and week (${week})`,
-      };
-    }
-  } catch (e) {
-    console.error("Database error: ", e);
-    return { message: `Database error :)` };
-  }
   const matchID = parseMatchLinkID(matchLink);
   const overstatData = await getOverstatStatsFromMatchID(matchID);
 

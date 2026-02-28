@@ -3,7 +3,7 @@ export interface Player {
   Name: string;
   OS_Link: string;
   OverallPoints?: number;
-  Division?: number | null;
+  Divisions?: number[];
   GamesPlayed?: number;
 }
 

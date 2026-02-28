@@ -91,14 +91,14 @@ export async function getPlayersByDivision(
 ): Promise<Array<Player> | null> {
   try {
     const rows =
-      await sql`SELECT * FROM Fantasy.Player WHERE division = ${division}`;
+      await sql`SELECT * FROM Fantasy.Player WHERE ${division} = ANY(divisions)`;
     if (rows.length === 0) return null;
     return rows.map((row) => ({
       PlayerID: row.playerid,
       Name: row.name,
       OS_Link: row.os_link,
       OverallPoints: row.overallpoints,
-      Division: row.division,
+      Divisions: row.divisions,
       GamesPlayed: row.gamesplayed,
     }));
   } catch (e) {

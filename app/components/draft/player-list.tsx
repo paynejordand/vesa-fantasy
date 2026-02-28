@@ -43,7 +43,7 @@ export function PlayerList({
             >
               <div className="flex flex-col items-center justify-between h-9/10 gap-2">
                 <a
-                  className="text-lg font-semibold text-blue-500"
+                  className="text-lg font-semibold text-blue-500 text-center overflow-wrap-anywhere"
                   href={player.OS_Link}
                   target="_blank"
                   rel="noreferrer"
@@ -55,7 +55,9 @@ export function PlayerList({
                 </p>
                 <p className="text-sm font-medium">
                   Average Points:{" "}
-                  {((player.OverallPoints ?? 0) / (player.GamesPlayed || 1)).toFixed(2)}
+                  {(
+                    (player.OverallPoints ?? 0) / (player.GamesPlayed || 1)
+                  ).toFixed(2)}
                 </p>
                 <button
                   className="text-white rounded"
