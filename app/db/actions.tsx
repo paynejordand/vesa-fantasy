@@ -59,7 +59,7 @@ export async function handleTeamScoreInDB(
 ) {
   try {
     await sql.transaction([
-      sql`UPDATE Fantasy.Pick SET score = score + ${score} WHERE teamid = ${id} AND week = ${week}`,
+      sql`UPDATE Fantasy.Pick SET tscore = ${score} WHERE teamid = ${id} AND week = ${week}`,
       sql`UPDATE Fantasy.Team SET overallpoints = overallpoints + ${score}, weeksplayed = weeksplayed + 1 WHERE teamid = ${id}`,
     ]);
   } catch (error) {
@@ -73,7 +73,12 @@ export async function handlePlayerScoreInDB(
   week: number,
 ) {
   await sql.transaction([
-    sql`UPDATE Fantasy.Pick SET score = score + ${score} WHERE week = ${week} AND Player1ID = ${id} OR Player2ID = ${id} OR Player3ID = ${id};`,
+    sql`UPDATE Fantasy.Pick
+        SET P1Score = CASE WHEN Player1ID = ${id} THEN P1Score + ${score} ELSE P1Score END,
+            P2Score = CASE WHEN Player2ID = ${id} THEN P2Score + ${score} ELSE P2Score END,
+            P3Score = CASE WHEN Player3ID = ${id} THEN P3Score + ${score} ELSE P3Score END
+        WHERE Player1ID = ${id} OR Player2ID = ${id} OR Player3ID = ${id}
+        AND week = ${week}`,
     sql`UPDATE Fantasy.Player SET overallpoints = overallpoints + ${score}, gamesplayed = gamesplayed + 1 WHERE playerid = ${id}`,
   ]);
 }
@@ -152,8 +157,9 @@ export async function scoreDraft(
         teamName: team.overall_stats.name,
         players: team.player_stats,
       };
-      let score = 0;
+
       teamStats.players.forEach(async (player) => {
+        let score = 0;
         score += (player.damageDealt / 100) * damageScore;
         score += player.assists * assistScore;
         score += player.knockdowns * knockdownScore;

@@ -30,6 +30,10 @@ export interface Pick {
   Player2ID: string;
   Player3ID: string;
   LeaderboardID?: string | null;
+  P1Score?: number;
+  P2Score?: number;
+  P3Score?: number;
+  TScore?: number;
 }
 
 export interface Leaderboard {
@@ -54,6 +58,10 @@ export interface LeaderboardWithPickNames extends Leaderboard {
     Player1Name: string;
     Player2Name: string;
     Player3Name: string;
+    P1Score: number;
+    P2Score: number;
+    P3Score: number;
+    TScore: number;
   }[];
 }
 

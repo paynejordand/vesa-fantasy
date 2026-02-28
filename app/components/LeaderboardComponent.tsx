@@ -5,6 +5,14 @@ interface LeaderboardComponentInterface {
   leaderboard: LeaderboardWithPickNames;
 }
 
+function getSortedPlayers(pick: LeaderboardWithPickNames["Picks"][0]) {
+  return [
+    { name: pick.Player1Name, score: pick.P1Score },
+    { name: pick.Player2Name, score: pick.P2Score },
+    { name: pick.Player3Name, score: pick.P3Score },
+  ].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+}
+
 export function LeaderboardComponent({
   leaderboard,
 }: LeaderboardComponentInterface) {
@@ -37,17 +45,28 @@ export function LeaderboardComponent({
             </tr>
           </thead>
           <tbody>
-            {Picks.map((pick, index) => (
-              <tr key={`${pick.SubmittedBy}-${index}`}>
-                <td>{index + 1}</td>
-                <td>{pick.SubmittedBy}</td>
-                <td>{pick.Score}</td>
-                <td>{pick.TeamName}</td>
-                <td>{pick.Player1Name}</td>
-                <td>{pick.Player2Name}</td>
-                <td>{pick.Player3Name}</td>
-              </tr>
-            ))}
+            {Picks.map((pick, index) => {
+              const sortedPlayers = getSortedPlayers(pick);
+              return (
+                <tr key={`${pick.SubmittedBy}-${index}`}>
+                  <td>{index + 1}</td>
+                  <td>{pick.SubmittedBy}</td>
+                  <td>{pick.Score}</td>
+                  <td>
+                    {pick.TeamName}, {pick.TScore}
+                  </td>
+                  <td>
+                    {sortedPlayers[0].name}, {sortedPlayers[0].score}
+                  </td>
+                  <td>
+                    {sortedPlayers[1].name}, {sortedPlayers[1].score}
+                  </td>
+                  <td>
+                    {sortedPlayers[2].name}, {sortedPlayers[2].score}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

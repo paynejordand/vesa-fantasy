@@ -3,7 +3,7 @@ export const placementScores = {
   2: 9,
   3: 7,
   4: 5,
-  5: 5,
+  5: 4,
   6: 3,
   7: 3,
   8: 2,

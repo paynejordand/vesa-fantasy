@@ -201,7 +201,11 @@ export async function getLeaderboardByDivisionAndWeek(
         t.name AS teamname,
         p1.name AS player1name,
         p2.name AS player2name,
-        p3.name AS player3name
+        p3.name AS player3name,
+        p.p1score,
+        p.p2score,
+        p.p3score,
+        p.tscore
     FROM Fantasy.Leaderboard l
     LEFT JOIN Fantasy.Pick p       ON p.leaderboardid = l.leaderboardid
     LEFT JOIN Fantasy.Team t       ON p.teamid        = t.teamid
@@ -235,6 +239,10 @@ export async function getLeaderboardByDivisionAndWeek(
           Player2Name: row.player2name,
           Player3Name: row.player3name,
           LeaderboardID: row.leaderboardid,
+          P1Score: row.p1score,
+          P2Score: row.p2score,
+          P3Score: row.p3score,
+          TScore: row.tscore,
         })),
     };
 
