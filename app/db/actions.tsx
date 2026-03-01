@@ -124,7 +124,7 @@ export async function scoreDraft(
 
       try {
         const teamID = await getTeamIDByTeamNameAndDivision(
-          team.overall_stats.name,
+          team.overall_stats.name.replace(/\'/g, ""),
           division,
         );
         if (teamID === null) return;
