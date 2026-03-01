@@ -7,6 +7,7 @@ import { DiscordSignIn, DiscordSignOut } from "@/app/components/header/discord-a
 import vesaLogo from "@/public/VESA-Logo.png"
 import { SessionUser } from "@/app/db/definitions";
 import { Nav } from "@/app/components/header/layout-nav";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "@/app/globals.css";
 
 
@@ -60,7 +61,9 @@ export default async function RootLayout({
           <Nav />
           <Account session={session} />
         </header>
-        <main>{children}</main>
+        <main>{children}
+          <SpeedInsights />
+        </main>
       </body>
     </html>
   );
