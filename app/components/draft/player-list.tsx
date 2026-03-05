@@ -50,10 +50,10 @@ export function PlayerList({
                 >
                   {player.Name}
                 </a>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium text-white">
                   Team: {teamName ?? "Unaffiliated"}
                 </p>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium text-white">
                   Average Points:{" "}
                   {(
                     (player.OverallPoints ?? 0) / (player.GamesPlayed || 1)
