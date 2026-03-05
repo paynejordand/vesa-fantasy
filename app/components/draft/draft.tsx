@@ -78,7 +78,7 @@ export function DraftComponent({
     return (
       <div className="flex flex-col items-center gap-6 p-4">
         <p className="text-base text-center">
-          You have already made a pick for the Division {division}, Week {week} Draft
+          Your picks for Div {division}, Week {week} are saved. Hope you picked someone getting subbed out. 
         </p>
         <div className="flex gap-6">
           <button
