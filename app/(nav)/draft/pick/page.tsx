@@ -10,6 +10,7 @@ import { submitDraft, deletePickByUsername } from "@/app/db/actions";
 import { clamp } from "@/app/lib/utils";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Draft Pick",
@@ -63,12 +64,15 @@ export default async function Page({ searchParams }: PageProps) {
         <p className="w-3/4 text-medium text-red-600">
           Draft was locked at the scheduled game start time.
           <br />
-          <a
+          <Link
             className="text-blue-500 hover:underline"
-            href={`/leaderboard/match?div=${division}&week=${weekNumber}`}
+            href={{
+              pathname: `/leaderboard/match`,
+              query: { div: division, week: weekNumber },
+            }}
           >
             View Leaderboard
-          </a>
+          </Link>
         </p>
       ) : (
         <DraftComponent

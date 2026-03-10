@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
-import { getUser } from "@/app/lib/dal"
+import { getUser } from "@/app/lib/dal";
 import Link from "next/link";
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
-import { DiscordSignIn, DiscordSignOut } from "@/app/components/header/discord-account";
-import vesaLogo from "@/public/VESA-Logo.png"
+import {
+  DiscordSignIn,
+  DiscordSignOut,
+} from "@/app/components/header/discord-account";
+import vesaLogo from "@/public/VESA-Logo.png";
+import vesaLogoBlack from "@/public/VESA-Logo-Black.png";
 import { SessionUser } from "@/app/db/definitions";
 import { Nav } from "@/app/components/header/layout-nav";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import "@/app/globals.css";
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,23 +30,32 @@ export const metadata: Metadata = {
     template: "VESA Fantasy - %s",
     default: "VESA Fantasy",
   },
-  description: "Weekly fantasy draft for the VESA esports league. Compete against your friends and climb the leaderboard each week!",
+  description:
+    "Weekly fantasy draft for the VESA esports league. Compete against your friends and climb the leaderboard each week!",
 };
 
 function Logo() {
   return (
     <Link href="/" className="flex items-center">
-      <span className="text-xl font-bold tracking-tight text-black dark:text-white">
-        <Image src={vesaLogo} alt="Vesa Logo" width={100}/>
-      </span>
+      <Image
+        src={vesaLogoBlack}
+        alt="Vesa Logo"
+        width={100}
+        className="block dark:hidden"
+      />
+      <Image
+        src={vesaLogo}
+        alt="Vesa Logo"
+        width={100}
+        className="hidden dark:block"
+      />
     </Link>
   );
 }
 
 function Account({ session }: { session: SessionUser | null }) {
   if (!session) return <DiscordSignIn />;
-  return <DiscordSignOut />
-
+  return <DiscordSignOut />;
 }
 
 export default async function RootLayout({

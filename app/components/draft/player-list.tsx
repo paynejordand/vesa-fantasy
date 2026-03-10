@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Player, Team } from "@/app/db/definitions";
+import Link from "next/link";
 
 interface PlayerListProps {
   allPlayers: Player[];
@@ -42,14 +43,14 @@ export function PlayerList({
               className={`w-full border p-4 rounded-lg ${isSelected ? "bg-green-600" : "bg-black"}`}
             >
               <div className="flex flex-col items-center justify-between h-9/10 gap-2">
-                <a
+                <Link
                   className="text-lg font-semibold text-blue-500 text-center overflow-wrap-anywhere"
                   href={player.OS_Link}
                   target="_blank"
                   rel="noreferrer"
                 >
                   {player.Name}
-                </a>
+                </Link>
                 <p className="text-sm font-medium text-white">
                   Team: {teamName ?? "Unaffiliated"}
                 </p>

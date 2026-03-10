@@ -1,6 +1,7 @@
+"use client";
+
 import Link from "next/link";
 import { Schedule } from "@/app/db/definitions";
-import { LocalTime } from "@/app/components/local-time";
 
 interface SchedulePageProps {
   schedules: Schedule[];
@@ -52,12 +53,19 @@ export function ScheduleComponent({ schedules }: SchedulePageProps) {
           {Array.from(dateMap.entries()).map(([date, matches]) => (
             <div key={date} className="flex flex-col items-center gap-2">
               <h3 className="text-base font-semibold underline">{date}</h3>
-              <LocalTime date={matches[0].GameDate} />
+              {new Date(matches[0].GameDate).toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                timeZoneName: "short",
+              })}
               <div className="flex flex-col items-center gap-1">
                 {matches.map((match) => (
                   <Link
                     key={match.ScheduleID}
-                    href={`/draft/pick?div=${match.Division}&week=${match.Week}`}
+                    href={{
+                      pathname: `/draft/pick`,
+                      query: { div: match.Division, week: match.Week },
+                    }}
                     className="text-base text-blue-500 hover:underline"
                   >
                     Div {match.Division}

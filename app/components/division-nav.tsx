@@ -38,7 +38,10 @@ export function DivisionNav({ divisionWeeks, route }: DivisionNavProps) {
             {weeks.map((week) => (
               <Link
                 key={week}
-                href={`${route}?div=${division}&week=${week}`}
+                href={{
+                  pathname: route,
+                  query: { div: division, week: week },
+                }}
                 className="text-sm font-medium text-blue-500 hover:underline"
               >
                 Week {week}

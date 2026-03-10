@@ -26,8 +26,7 @@ export default function Page() {
                   from each division.
                 </p>
                 <p className="mb-2">
-                  - Games are played starting at 8:00 PM eastern time (
-                  <LocalTime date={new Date("2024-01-01T20:00:00-05:00")} />
+                  - Games are played starting at 8:00 PM eastern time (<LocalTime />
                   ){" "}
                 </p>
               </div>

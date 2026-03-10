@@ -13,9 +13,7 @@ function getSortedPlayers(pick: LeaderboardWithPickNames["Picks"][0]) {
   ].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }
 
-export function Leaderboard({
-  leaderboard,
-}: LeaderboardComponentInterface) {
+export function Leaderboard({ leaderboard }: LeaderboardComponentInterface) {
   const { Division, Week, MatchLink, Picks } = leaderboard;
 
   return (
@@ -33,7 +31,7 @@ export function Leaderboard({
 
       <div className="scrollable-table-container overflow-y-auto max-h-108">
         <table className="scrollable-table">
-          <thead className="sticky top-0 dark:bg-black">
+          <thead className="sticky top-0 dark:bg-black bg-white">
             <tr>
               <th>#</th>
               <th>Submitter</th>
