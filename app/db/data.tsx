@@ -3,6 +3,7 @@ import {
   Team,
   Pick,
   Player,
+  Schedule,
   LeaderboardWithPickNames,
 } from "@/app/db/definitions";
 
@@ -281,5 +282,22 @@ export async function getMatchStartTimeByDivisionAndWeek(
   } catch (error) {
     console.error("Database error: ", error);
     throw new Error("Database failed to retrieve Match Start Time");
+  }
+}
+
+export async function getFutureMatchesFromSchedule(): Promise<Array<Schedule> | null> {
+  try {
+    const now = new Date();
+    const rows = await sql`SELECT * FROM Fantasy.Schedule WHERE gamedate > ${now} ORDER BY gamedate ASC`;
+    return rows.map((row) => ({
+      ScheduleID: row.scheduleid,
+      Season: row.season,
+      Division: row.division,
+      Week: row.week,
+      GameDate: row.gamedate,
+    }));
+  } catch (error) {
+    console.error("Database error: ", error);
+    throw new Error("Database failed to retrieve Future Matches");
   }
 }

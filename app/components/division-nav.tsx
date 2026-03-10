@@ -39,7 +39,7 @@ export function DivisionNav({ divisionWeeks, route }: DivisionNavProps) {
               <Link
                 key={week}
                 href={`${route}?div=${division}&week=${week}`}
-                className="text-sm font-medium text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white transition-colors"
+                className="text-sm font-medium text-blue-500 hover:underline"
               >
                 Week {week}
               </Link>
