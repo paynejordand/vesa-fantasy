@@ -14,6 +14,7 @@ import { Nav } from "@/app/components/header/layout-nav";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import "@/app/globals.css";
+import { MobileMenu } from "./components/mobile-menu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -70,9 +71,22 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <header className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 py-4">
-          <Logo />
-          <Nav />
-          <Account session={session} />
+          <div className="flex-1">
+            <Logo />
+          </div>
+
+          {/* Desktop Nav - centered */}
+          <div className="hidden md:flex flex-1 items-center justify-center gap-6">
+            <Nav />
+          </div>
+
+          {/* Account - right justified */}
+          <div className="hidden md:flex flex-1 items-center justify-end">
+            <Account session={session} />
+          </div>
+
+          {/* Mobile */}
+          <MobileMenu nav={<Nav />} account={<Account session={session} />} />
         </header>
         <main>
           {children}
