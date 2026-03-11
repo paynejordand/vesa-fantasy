@@ -18,6 +18,21 @@ export interface Team {
   Player3ID?: string | null;
 }
 
+export interface TeamWithPlayers {
+  TeamID: string;
+  Name: string;
+  Division: number;
+  Player1ID: string | null;
+  Player1Name: string | null;
+  Player1OSLink: string | null;
+  Player2ID: string | null;
+  Player2Name: string | null;
+  Player2OSLink: string | null;
+  Player3ID: string | null;
+  Player3Name: string | null;
+  Player3OSLink: string | null;
+}
+
 export interface Pick {
   PickID?: string;
   Division: number;
@@ -72,12 +87,12 @@ export interface PlayerStat {
   kills: number;
   respawnsGiven: number;
   playerId: string;
-};
+}
 
 export interface SessionUser {
-  name: string,
-  image: string, 
-  role: string,
+  name: string;
+  image: string;
+  role: string;
 }
 
 export interface Schedule {

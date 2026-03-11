@@ -18,6 +18,10 @@ import {
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/app/lib/dal";
 
+export type ActionResult =
+  | { success: true }
+  | { success: false; message: string };
+
 export async function submitDraft(
   draftedTeam: string | null,
   draftedPlayers: string[],
@@ -85,19 +89,28 @@ async function insertLeaderboard(
   division: number,
   week: number,
   matchLink: string,
-): Promise<void> {
-  await sql.transaction([
-    sql`INSERT INTO Fantasy.Leaderboard (Division, Week, MatchLink)
-            VALUES (${division}, ${week}, ${matchLink})`,
-    sql`UPDATE Fantasy.Pick
-            SET LeaderboardID = (
-                SELECT LeaderboardID FROM Fantasy.Leaderboard
-                WHERE Division = ${division} AND Week = ${week}
-            )
-            WHERE Division = ${division}
-              AND Week = ${week}
-              AND LeaderboardID IS NULL`,
-  ]);
+): Promise<ActionResult> {
+  try {
+    await sql.transaction([
+      sql`INSERT INTO Fantasy.Leaderboard (Division, Week, MatchLink)
+              VALUES (${division}, ${week}, ${matchLink})`,
+      sql`UPDATE Fantasy.Pick
+              SET LeaderboardID = (
+                  SELECT LeaderboardID FROM Fantasy.Leaderboard
+                  WHERE Division = ${division} AND Week = ${week}
+              )
+              WHERE Division = ${division}
+                AND Week = ${week}
+                AND LeaderboardID IS NULL`,
+    ]);
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "A database error occurred. Please try again.",
+    };
+  }
 }
 
 export async function scoreDraft(
@@ -130,7 +143,11 @@ export async function scoreDraft(
         if (teamID === null) return;
         await handleTeamScoreInDB(teamID, score, week);
       } catch (e) {
-        console.error(":) ", e);
+        console.error("Database Error: ", e);
+        return {
+          success: false,
+          message: "Failed to update team score in the database.",
+        };
       }
     },
   );
@@ -160,12 +177,25 @@ export async function scoreDraft(
           await handlePlayerScoreInDB(playerID, score, week);
         } catch (e) {
           console.error(e);
+          return {
+            success: false,
+            message: "Failed to update player score in the database.",
+          };
         }
       });
     },
   );
-  await insertLeaderboard(division, week, matchLink);
-  revalidatePath(`/leaderboard/match?div=${division}&week=${week}`);
+  try {
+    await insertLeaderboard(division, week, matchLink);
+  } catch (e) {
+    console.error("Error inserting leaderboard: ", e);
+    return {
+      success: false,
+      message: "Failed to insert leaderboard into the database.",
+    };
+  } finally {
+    revalidatePath(`/leaderboard/match?div=${division}&week=${week}`);
+  }
 }
 
 export async function deletePickByUsername(
@@ -179,5 +209,170 @@ export async function deletePickByUsername(
     console.error("Database error: ", e);
   } finally {
     revalidatePath(`/draft/pick?div=${division}&week=${week}`);
+  }
+}
+
+export async function removePlayersFromTeam(
+  teamID: string,
+  playerIDs: string[],
+): Promise<ActionResult> {
+  try {
+    const team =
+      await sql`SELECT Division FROM Fantasy.Team WHERE TeamID = ${teamID}`;
+    const division = team[0].division;
+
+    await sql.transaction([
+      sql`UPDATE Fantasy.Team
+              SET
+                  Player1ID = CASE WHEN Player1ID = ANY(${playerIDs}::UUID[]) THEN NULL ELSE Player1ID END,
+                  Player2ID = CASE WHEN Player2ID = ANY(${playerIDs}::UUID[]) THEN NULL ELSE Player2ID END,
+                  Player3ID = CASE WHEN Player3ID = ANY(${playerIDs}::UUID[]) THEN NULL ELSE Player3ID END
+              WHERE TeamID = ${teamID}`,
+
+      sql`UPDATE Fantasy.Player
+              SET Divisions = array_remove(Divisions, ${division}::SMALLINT)
+              WHERE PlayerID = ANY(${playerIDs}::UUID[])`,
+    ]);
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "A database error occurred. Please try again.",
+    };
+  }
+}
+
+export async function addPlayerToTeam(
+  teamID: string,
+  division: number,
+  players: { name: string; osLink: string }[],
+): Promise<ActionResult> {
+  try {
+    for (const player of players) {
+      const sanitizedLink = `https://overstat.gg/player/${player.osLink.match(/\/player\/(\d+)/)?.[1] ?? ""}`;
+
+      await sql.transaction([
+        sql`INSERT INTO Fantasy.Player (Name, OS_Link, Divisions)
+                  VALUES (${player.name}, ${sanitizedLink}, ARRAY[${division}]::SMALLINT[])
+                  ON CONFLICT (OS_Link) DO UPDATE SET
+                      Divisions = CASE
+                          WHEN ${division} = ANY(Fantasy.Player.Divisions) THEN Fantasy.Player.Divisions
+                          ELSE array_append(Fantasy.Player.Divisions, ${division}::SMALLINT)
+                      END`,
+
+        sql`UPDATE Fantasy.Team
+                  SET
+                      Player1ID = CASE WHEN Player1ID IS NULL THEN (SELECT PlayerID FROM Fantasy.Player WHERE OS_Link = ${sanitizedLink}) ELSE Player1ID END,
+                      Player2ID = CASE WHEN Player1ID IS NOT NULL AND Player2ID IS NULL THEN (SELECT PlayerID FROM Fantasy.Player WHERE OS_Link = ${sanitizedLink}) ELSE Player2ID END,
+                      Player3ID = CASE WHEN Player1ID IS NOT NULL AND Player2ID IS NOT NULL AND Player3ID IS NULL THEN (SELECT PlayerID FROM Fantasy.Player WHERE OS_Link = ${sanitizedLink}) ELSE Player3ID END
+                  WHERE TeamID = ${teamID}`,
+      ]);
+    }
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "A database error occurred. Please try again.",
+    };
+  }
+}
+
+export async function removeTeam(teamIDs: string[]): Promise<ActionResult> {
+  try {
+    for (const teamID of teamIDs) {
+      const team = await sql`
+              SELECT Division, Player1ID, Player2ID, Player3ID
+              FROM Fantasy.Team WHERE TeamID = ${teamID}
+          `;
+
+      if (team.length === 0) continue;
+
+      const { division, player1id, player2id, player3id } = team[0];
+      const playerIDs = [player1id, player2id, player3id].filter(
+        (p) => p !== null,
+      );
+
+      await sql.transaction([
+        sql`DELETE FROM Fantasy.Team WHERE TeamID = ${teamID}`,
+        sql`UPDATE Fantasy.Player
+                  SET Divisions = array_remove(Divisions, ${division}::SMALLINT)
+                  WHERE PlayerID = ANY(${playerIDs}::UUID[])`,
+      ]);
+    }
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "A database error occurred. Please try again.",
+    };
+  }
+}
+
+export async function addTeam(
+  teamName: string,
+  division: number,
+  players: { name: string; osLink: string }[],
+): Promise<ActionResult> {
+  try {
+    const sanitizedPlayers = players
+      .filter((p) => p.name.trim() && p.osLink.trim())
+      .map((p) => ({
+        name: p.name.trim().replace(/'/g, ""),
+        osLink: `https://overstat.gg/player/${p.osLink.match(/\/player\/(\d+)/)?.[1] ?? ""}`,
+      }));
+
+    if (sanitizedPlayers.length === 0)
+      return {
+        success: false,
+        message: "At least one valid player is required.",
+      };
+
+    for (const player of sanitizedPlayers) {
+      await sql`
+              INSERT INTO Fantasy.Player (Name, OS_Link, Divisions)
+              VALUES (${player.name}, ${player.osLink}, ARRAY[${division}]::SMALLINT[])
+              ON CONFLICT (OS_Link) DO UPDATE SET
+                  Divisions = CASE
+                      WHEN ${division} = ANY(Fantasy.Player.Divisions) THEN Fantasy.Player.Divisions
+                      ELSE array_append(Fantasy.Player.Divisions, ${division}::SMALLINT)
+                  END
+          `;
+    }
+
+    const playerIDs = await Promise.all(
+      sanitizedPlayers.map(
+        (p) => sql`
+              SELECT PlayerID FROM Fantasy.Player WHERE OS_Link = ${p.osLink}
+          `,
+      ),
+    );
+
+    await sql`
+          INSERT INTO Fantasy.Team (Name, Division, Player1ID, Player2ID, Player3ID)
+          VALUES (
+              ${teamName.trim().replace(/'/g, "")},
+              ${division},
+              ${playerIDs[0]?.[0]?.playerid ?? null},
+              ${playerIDs[1]?.[0]?.playerid ?? null},
+              ${playerIDs[2]?.[0]?.playerid ?? null}
+          )
+      `;
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "A database error occurred. Please try again.",
+    };
   }
 }

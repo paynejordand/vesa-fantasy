@@ -68,7 +68,13 @@ export function DraftComponent({
       return;
     }
     setError(null);
-    onSubmit(selectedTeam, selectedPlayers, division, week);
+    try {
+      onSubmit(selectedTeam, selectedPlayers, division, week);
+    } catch {
+      setError(
+        "An error occurred while submitting your pick. Please try again.",
+      );
+    }
   }
 
   const canSubmit =
@@ -78,7 +84,8 @@ export function DraftComponent({
     return (
       <div className="flex flex-col items-center gap-6 p-4">
         <p className="text-base text-center">
-          Your picks for Div {division}, Week {week} are saved. Hope you picked someone getting subbed out. 
+          Your picks for Div {division}, Week {week} are saved. Hope you picked
+          someone getting subbed out.
         </p>
         <div className="flex gap-6">
           <button

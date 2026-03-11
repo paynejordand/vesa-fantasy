@@ -5,6 +5,7 @@ import {
   Player,
   Schedule,
   LeaderboardWithPickNames,
+  TeamWithPlayers,
 } from "@/app/db/definitions";
 
 export async function getTeamByPlayerID(
@@ -159,18 +160,6 @@ export async function getPickByUsername(
   }
 }
 
-export async function getNumberOfDivisions(): Promise<number | null> {
-  try {
-    const rows = await sql`SELECT MAX(division) FROM Fantasy.player`;
-    if (rows.length === 0) return 0;
-    const row = rows[0];
-    return row.max;
-  } catch (e) {
-    console.error("Database error: ", e);
-    throw new Error("Database failed to retrieve Division");
-  }
-}
-
 export async function getAdminByUsername(
   name: string,
 ): Promise<boolean | null> {
@@ -288,7 +277,8 @@ export async function getMatchStartTimeByDivisionAndWeek(
 export async function getFutureMatchesFromSchedule(): Promise<Array<Schedule> | null> {
   try {
     const now = new Date();
-    const rows = await sql`SELECT * FROM Fantasy.Schedule WHERE gamedate > ${now} ORDER BY gamedate ASC`;
+    const rows =
+      await sql`SELECT * FROM Fantasy.Schedule WHERE gamedate > ${now} ORDER BY gamedate ASC`;
     return rows.map((row) => ({
       ScheduleID: row.scheduleid,
       Season: row.season,
@@ -299,5 +289,50 @@ export async function getFutureMatchesFromSchedule(): Promise<Array<Schedule> | 
   } catch (error) {
     console.error("Database error: ", error);
     throw new Error("Database failed to retrieve Future Matches");
+  }
+}
+
+export async function getTeamsWithPlayerNames(): Promise<
+  Array<TeamWithPlayers>
+> {
+  try {
+    const rows = await sql`
+    SELECT
+        t.teamid,
+        t.name,
+        t.division,
+        t.player1id,
+        t.player2id,
+        t.player3id,
+        p1.name AS player1name,
+        p1.os_link AS player1oslink,
+        p2.name AS player2name,
+        p2.os_link AS player2oslink,
+        p3.name AS player3name,
+        p3.os_link AS player3oslink
+    FROM Fantasy.Team t
+    LEFT JOIN Fantasy.Player p1 ON t.player1id = p1.playerid
+    LEFT JOIN Fantasy.Player p2 ON t.player2id = p2.playerid
+    LEFT JOIN Fantasy.Player p3 ON t.player3id = p3.playerid
+    ORDER BY t.division, t.name
+`;
+    if (rows.length === 0) return [];
+    return rows.map((row) => ({
+      TeamID: row.teamid,
+      Name: row.name,
+      Division: row.division,
+      Player1ID: row.player1id,
+      Player1Name: row.player1name ?? "",
+      Player1OSLink: row.player1oslink ?? "",
+      Player2ID: row.player2id,
+      Player2Name: row.player2name ?? "",
+      Player2OSLink: row.player2oslink ?? "",
+      Player3ID: row.player3id,
+      Player3Name: row.player3name ?? "",
+      Player3OSLink: row.player3oslink ?? "",
+    }));
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve Teams with Player Names");
   }
 }

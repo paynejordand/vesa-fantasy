@@ -8,11 +8,9 @@ interface CalcLeaderboardProps {
   division: number;
 }
 
-export function CalcLeaderboard({
-  division,
-  week,
-}: CalcLeaderboardProps) {
+export function CalcLeaderboard({ division, week }: CalcLeaderboardProps) {
   const [link, setLink] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const isFormValid = link && division && week;
 
@@ -20,7 +18,17 @@ export function CalcLeaderboard({
     <div className="flex justify-center">
       <form
         action={async (formData: FormData) => {
-          await scoreDraft(division, week, formData.get("MatchLink") as string);
+          try {
+            await scoreDraft(
+              division,
+              week,
+              formData.get("MatchLink") as string,
+            );
+          } catch {
+            setError(
+              "An error occurred while submitting the match link. Please try again.",
+            );
+          }
         }}
       >
         <label>
@@ -35,6 +43,7 @@ export function CalcLeaderboard({
         </label>
         <button disabled={!isFormValid}>Submit</button>
       </form>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   );
 }
