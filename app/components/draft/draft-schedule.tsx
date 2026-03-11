@@ -20,7 +20,6 @@ function groupByWeekAndDate(
     const dateMap = weekMap.get(schedule.Week)!;
     const key = new Date(schedule.GameDate).toLocaleDateString("en-US", {
       weekday: "long",
-      year: "numeric",
       month: "long",
       day: "numeric",
     });
@@ -52,12 +51,9 @@ export function ScheduleComponent({ schedules }: SchedulePageProps) {
           </h1>
           {Array.from(dateMap.entries()).map(([date, matches]) => (
             <div key={date} className="flex flex-col items-center gap-2">
-              <h3 className="text-base font-semibold underline">{date}</h3>
-              {new Date(matches[0].GameDate).toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                timeZoneName: "short",
-              })}
+              <h2 className="text-base font-semibold underline text-center">
+                {date}
+              </h2>
               <div className="flex flex-col items-center gap-1">
                 {matches.map((match) => (
                   <Link

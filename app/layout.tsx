@@ -81,7 +81,7 @@ export default async function RootLayout({
           </div>
 
           {/* Account - right justified */}
-          <div className="hidden md:flex flex-1 items-center justify-end">
+          <div className="hidden md:flex flex-1 justify-end">
             <Account session={session} />
           </div>
 
