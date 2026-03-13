@@ -93,6 +93,7 @@ export interface SessionUser {
   name: string;
   image: string;
   role: string;
+  id: string;
 }
 
 export interface Schedule {
