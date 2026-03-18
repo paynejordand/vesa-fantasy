@@ -1,5 +1,5 @@
 ## About
-Website built to provide the Vesa Community a way to be involved in other divisional matches. Each night players can draft a team and players to see who scores the best!
+Website built to provide the Vesa Community ([Discord server](https://discord.gg/vesaleague)) a way to be involved in other divisional matches. Each night players can draft a team and players to see who scores the best!
 
 Uses Discord as an OAuth sign in.
 
