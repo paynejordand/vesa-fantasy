@@ -58,10 +58,11 @@ export async function handleTeamScoreInDB(
   id: string,
   score: number,
   week: number,
+  division: number,
 ) {
   try {
     await sql.transaction([
-      sql`UPDATE Fantasy.Pick SET tscore = ${score} WHERE teamid = ${id} AND week = ${week}`,
+      sql`UPDATE Fantasy.Pick SET tscore = ${score} WHERE teamid = ${id} AND week = ${week} AND division = ${division}`,
       sql`UPDATE Fantasy.Team SET overallpoints = overallpoints + ${score}, weeksplayed = weeksplayed + 1 WHERE teamid = ${id}`,
     ]);
   } catch (error) {
@@ -73,14 +74,15 @@ export async function handlePlayerScoreInDB(
   id: string,
   score: number,
   week: number,
+  division: number,
 ) {
   await sql.transaction([
     sql`UPDATE Fantasy.Pick
         SET P1Score = CASE WHEN Player1ID = ${id} THEN ${score} ELSE P1Score END,
             P2Score = CASE WHEN Player2ID = ${id} THEN ${score} ELSE P2Score END,
             P3Score = CASE WHEN Player3ID = ${id} THEN ${score} ELSE P3Score END
-        WHERE Player1ID = ${id} OR Player2ID = ${id} OR Player3ID = ${id}
-        AND week = ${week}`,
+        WHERE (Player1ID = ${id} OR Player2ID = ${id} OR Player3ID = ${id})
+        AND week = ${week} AND division = ${division}`,
     sql`UPDATE Fantasy.Player SET overallpoints = overallpoints + ${score}, gamesplayed = gamesplayed + 1 WHERE playerid = ${id}`,
   ]);
 }
@@ -141,7 +143,7 @@ export async function scoreDraft(
           division,
         );
         if (teamID === null) return;
-        await handleTeamScoreInDB(teamID, score, week);
+        await handleTeamScoreInDB(teamID, score, week, division);
       } catch (e) {
         console.error("Database Error: ", e);
         return {
@@ -174,7 +176,7 @@ export async function scoreDraft(
           const pLink = `https://overstat.gg/player/${player.playerId}`;
           const playerID = await getPlayerIDByPlayerLink(pLink);
           if (playerID === null) return;
-          await handlePlayerScoreInDB(playerID, score, week);
+          await handlePlayerScoreInDB(playerID, score, week, division);
         } catch (e) {
           console.error(e);
           return {
