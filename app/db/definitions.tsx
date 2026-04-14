@@ -1,3 +1,5 @@
+import { LeaderboardSelect } from "@/app/db/schema";
+
 export interface Player {
   PlayerID?: string;
   Name: string;
@@ -5,17 +7,6 @@ export interface Player {
   OverallPoints?: number;
   Divisions?: number[];
   GamesPlayed?: number;
-}
-
-export interface Team {
-  TeamID?: string;
-  Name: string;
-  Division: number;
-  WeeksPlayed?: number;
-  OverallPoints?: number;
-  Player1ID?: string | null;
-  Player2ID?: string | null;
-  Player3ID?: string | null;
 }
 
 export interface TeamWithPlayers {
@@ -33,36 +24,7 @@ export interface TeamWithPlayers {
   Player3OSLink: string | null;
 }
 
-export interface Pick {
-  PickID?: string;
-  Division: number;
-  Week: number;
-  SubmittedOn?: Date;
-  SubmittedBy: string;
-  Score?: number;
-  TeamID: string;
-  Player1ID: string;
-  Player2ID: string;
-  Player3ID: string;
-  LeaderboardID?: string | null;
-  P1Score?: number;
-  P2Score?: number;
-  P3Score?: number;
-  TScore?: number;
-}
-
-export interface Leaderboard {
-  LeaderboardID?: string;
-  Division: number;
-  Week: number;
-  MatchLink: string;
-}
-
-export interface LeaderboardWithPicks extends Leaderboard {
-  Picks: Pick[];
-}
-
-export interface LeaderboardWithPickNames extends Leaderboard {
+export interface LeaderboardWithPickNames extends LeaderboardSelect {
   Picks: {
     PickID: string;
     SubmittedOn: Date;
@@ -94,12 +56,4 @@ export interface SessionUser {
   image: string;
   role: string;
   id: string;
-}
-
-export interface Schedule {
-  ScheduleID: string;
-  Season: number;
-  Week: number;
-  Division: number;
-  GameDate: Date;
 }

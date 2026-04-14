@@ -76,7 +76,7 @@ export default async function Page({ searchParams }: PageProps) {
         </p>
       ) : (
         <DraftComponent
-          key={pick ? `${pick.PickID}-${pick.SubmittedOn}` : "no-pick"}
+          key={pick ? `${pick.pickid}-${pick.submittedon}` : "no-pick"}
           players={players}
           teams={teams}
           division={division}

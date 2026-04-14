@@ -1,24 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { Schedule } from "@/app/db/definitions";
+import { ScheduleSelect } from "@/app/db/schema";
 
 interface SchedulePageProps {
-  schedules: Schedule[];
+  schedules: ScheduleSelect[];
 }
 
 function groupByWeekAndDate(
-  schedules: Schedule[],
-): Map<number, Map<string, Schedule[]>> {
-  const weekMap = new Map<number, Map<string, Schedule[]>>();
+  schedules: ScheduleSelect[],
+): Map<number, Map<string, ScheduleSelect[]>> {
+  const weekMap = new Map<number, Map<string, ScheduleSelect[]>>();
 
   for (const schedule of schedules) {
-    if (!weekMap.has(schedule.Week)) {
-      weekMap.set(schedule.Week, new Map());
+    if (!weekMap.has(schedule.week)) {
+      weekMap.set(schedule.week, new Map());
     }
 
-    const dateMap = weekMap.get(schedule.Week)!;
-    const key = new Date(schedule.GameDate).toLocaleDateString("en-US", {
+    const dateMap = weekMap.get(schedule.week)!;
+    const key = new Date(schedule.gamedate).toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -32,7 +32,7 @@ function groupByWeekAndDate(
 
   for (const dateMap of weekMap.values()) {
     for (const matches of dateMap.values()) {
-      matches.sort((a, b) => a.Division - b.Division);
+      matches.sort((a, b) => a.division - b.division);
     }
   }
 
@@ -57,14 +57,14 @@ export function ScheduleComponent({ schedules }: SchedulePageProps) {
               <div className="flex flex-col items-center gap-1">
                 {matches.map((match) => (
                   <Link
-                    key={match.ScheduleID}
+                    key={match.scheduleid}
                     href={{
                       pathname: `/draft/pick`,
-                      query: { div: match.Division, week: match.Week },
+                      query: { div: match.division, week: match.week },
                     }}
                     className="text-base text-blue-500 hover:underline"
                   >
-                    Div {match.Division}
+                    Div {match.division}
                   </Link>
                 ))}
               </div>

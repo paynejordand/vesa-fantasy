@@ -2,16 +2,15 @@
 
 import { PlayerList } from "@/app/components/draft/player-list";
 import { TeamList } from "@/app/components/draft/team-list";
-
-import { Team, Player, Pick } from "@/app/db/definitions";
+import { PlayerSelect, TeamSelect, PickSelect } from "@/app/db/schema";
 import { useState } from "react";
 
 interface DraftComponentProps {
-  players: Player[];
-  teams: Team[];
+  players: PlayerSelect[];
+  teams: TeamSelect[];
   division: number;
   week: number;
-  initialPick?: Pick | null;
+  initialPick?: PickSelect | null;
   onSubmit: (
     team: string,
     players: string[],
@@ -31,11 +30,11 @@ export function DraftComponent({
   onDelete,
 }: DraftComponentProps) {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(
-    initialPick?.TeamID ?? null,
+    initialPick?.teamid ?? null,
   );
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>(
     initialPick
-      ? [initialPick.Player1ID, initialPick.Player2ID, initialPick.Player3ID]
+      ? [initialPick.player1id, initialPick.player2id, initialPick.player3id]
       : [],
   );
   const [error, setError] = useState<string | null>(null);
@@ -44,18 +43,18 @@ export function DraftComponent({
   );
   const maxPlayers = 3;
 
-  function handlePlayerClick(player: Player) {
-    const isSelected = selectedPlayers.some((p) => p === player.PlayerID);
+  function handlePlayerClick(player: PlayerSelect) {
+    const isSelected = selectedPlayers.some((p) => p === player.playerid);
     if (isSelected) {
-      setSelectedPlayers(selectedPlayers.filter((p) => p !== player.PlayerID));
+      setSelectedPlayers(selectedPlayers.filter((p) => p !== player.playerid));
       return;
     }
     if (selectedPlayers.length >= maxPlayers) return;
-    setSelectedPlayers([...selectedPlayers, player.PlayerID!]);
+    setSelectedPlayers([...selectedPlayers, player.playerid!]);
   }
 
-  function handleTeamClick(team: Team) {
-    setSelectedTeam((prev) => (prev === team.TeamID ? null : team.TeamID!));
+  function handleTeamClick(team: TeamSelect) {
+    setSelectedTeam((prev) => (prev === team.teamid ? null : team.teamid!));
   }
 
   function handleSubmit() {
@@ -96,7 +95,7 @@ export function DraftComponent({
           </button>
           <button
             onClick={() =>
-              onDelete(initialPick?.SubmittedBy ?? "", division, week)
+              onDelete(initialPick?.submittedby ?? "", division, week)
             }
             className="border border-red-500 px-6 py-2 font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
           >
