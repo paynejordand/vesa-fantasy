@@ -1,23 +1,68 @@
 import { sql, db } from "@/app/db/db";
 import {
   LeaderboardWithPickNames,
+  Player,
   TeamWithPlayers,
 } from "@/app/db/definitions";
-import { playerInFantasy, teamInFantasy, pickInFantasy } from "@/app/db/schema";
 import {
-  PlayerSelect,
-  TeamSelect,
+  playerInFantasy,
+  teamInFantasy,
+  pickInFantasy,
+  leaderboardInFantasy,
+  playerSeasonInFantasy,
+  playerPickInFantasy,
+  teamPickInFantasy,
   PickSelect,
-  ScheduleSelect,
 } from "@/app/db/schema";
+import { PlayerSelect, TeamSelect, ScheduleSelect } from "@/app/db/schema";
 import { adminInFantasy, scheduleInFantasy } from "@/drizzle/schema";
-import {
-  eq,
-  and,
-  arrayContains,
-  gt,
-} from "drizzle-orm/sql/expressions/conditions";
-import { asc } from "drizzle-orm/sql/expressions/select";
+
+import { asc, desc } from "drizzle-orm/sql/expressions/select";
+import { sql as drizzleSQL, eq, and, or, arrayContains, gt } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+
+export async function getPickByUserID(
+  userID: string,
+  division: number,
+  week: number,
+): Promise<PickSelect | null> {
+  try {
+    const rows = await db
+      .select({
+        pickid: pickInFantasy.pickid!,
+        submittedon: pickInFantasy.submittedon!,
+        submitterid: pickInFantasy.submitterid!,
+        submittername: pickInFantasy.submittername!,
+        leaderboardid: pickInFantasy.leaderboardid!,
+        teamid: pickInFantasy.teamid!,
+        player1id: pickInFantasy.player1id!,
+        player2id: pickInFantasy.player2id!,
+        player3id: pickInFantasy.player3id!,
+        score: pickInFantasy.score!,
+      })
+      .from(pickInFantasy)
+      .leftJoin(
+        leaderboardInFantasy,
+        eq(pickInFantasy.leaderboardid, leaderboardInFantasy.leaderboardid),
+      )
+      .leftJoin(
+        scheduleInFantasy,
+        eq(leaderboardInFantasy.scheduleid, scheduleInFantasy.scheduleid),
+      )
+      .where(
+        and(
+          eq(pickInFantasy.submitterid, userID),
+          eq(scheduleInFantasy.division, division),
+          eq(scheduleInFantasy.week, week),
+        ),
+      );
+    if (rows.length === 0) return null;
+    return rows[0];
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve Pick");
+  }
+}
 
 export async function getTeamIDByTeamNameAndDivision(
   name: string,
@@ -56,14 +101,25 @@ export async function getPlayerIDByPlayerLink(
 
 export async function getPlayersByDivision(
   division: number,
-): Promise<Array<PlayerSelect> | null> {
+): Promise<Array<Player> | null> {
   try {
     const rows = await db
       .select()
       .from(playerInFantasy)
-      .where(arrayContains(playerInFantasy.divisions, [division]));
+      .leftJoin(
+        playerSeasonInFantasy,
+        eq(playerInFantasy.playerid, playerSeasonInFantasy.playerid),
+      )
+      .where(arrayContains(playerSeasonInFantasy.divisions, [division]));
     if (rows.length === 0) return null;
-    return rows;
+    return rows.map((row) => ({
+      playerid: row.player.playerid,
+      name: row.player.name,
+      osLink: row.player.osLink,
+      overallpoints: Number(row.playerseason!.overallpoints),
+      divisions: row.playerseason!.divisions,
+      gamesplayed: row.playerseason!.gamesplayed,
+    }));
   } catch (e) {
     console.error("Database error: ", e);
     throw new Error("Database failed to retrieve Players");
@@ -83,30 +139,6 @@ export async function getTeamsByDivision(
   } catch (e) {
     console.error("Database error: ", e);
     throw new Error("Database failed to retrieve Teams");
-  }
-}
-
-export async function getPickByUsername(
-  name: string,
-  division: number,
-  week: number,
-): Promise<PickSelect | null> {
-  try {
-    const rows = await db
-      .select()
-      .from(pickInFantasy)
-      .where(
-        and(
-          eq(pickInFantasy.submittedby, name),
-          eq(pickInFantasy.division, division),
-          eq(pickInFantasy.week, week),
-        ),
-      );
-    if (rows.length === 0) return null;
-    return rows[0];
-  } catch (error) {
-    console.error("Database error: ", error);
-    throw new Error("Database failed to retrieve Pick");
   }
 }
 
@@ -130,63 +162,108 @@ export async function getLeaderboardByDivisionAndWeek(
   week: number,
 ): Promise<LeaderboardWithPickNames | null> {
   try {
-    const rows = await sql`
-        SELECT 
-        l.leaderboardid,
-        l.division,
-        l.week,
-        l.matchlink,
-        p.pickid,
-        p.submittedon,
-        p.submittedby,
-        p.score,
-        p.leaderboardid,
-        t.name AS teamname,
-        p1.name AS player1name,
-        p2.name AS player2name,
-        p3.name AS player3name,
-        p.p1score,
-        p.p2score,
-        p.p3score,
-        p.tscore
-    FROM Fantasy.Leaderboard l
-    LEFT JOIN Fantasy.Pick p       ON p.leaderboardid = l.leaderboardid
-    LEFT JOIN Fantasy.Team t       ON p.teamid        = t.teamid
-    LEFT JOIN Fantasy.Player p1    ON p.player1id     = p1.playerid
-    LEFT JOIN Fantasy.Player p2    ON p.player2id     = p2.playerid
-    LEFT JOIN Fantasy.Player p3    ON p.player3id     = p3.playerid
-    WHERE l.division = ${division} AND l.week = ${week}
-    ORDER BY p.score DESC
-    `;
+    const p1 = alias(playerInFantasy, "p1");
+    const p2 = alias(playerInFantasy, "p2");
+    const p3 = alias(playerInFantasy, "p3");
+    const pp1 = alias(playerPickInFantasy, "pp1");
+    const pp2 = alias(playerPickInFantasy, "pp2");
+    const pp3 = alias(playerPickInFantasy, "pp3");
+
+    const rows = await db
+      .select({
+        leaderboardid: leaderboardInFantasy.leaderboardid,
+        scheduleid: leaderboardInFantasy.scheduleid,
+        division: scheduleInFantasy.division,
+        week: scheduleInFantasy.week,
+        matchlink: leaderboardInFantasy.matchlink,
+        pickid: pickInFantasy.pickid,
+        submittedon: pickInFantasy.submittedon,
+        submittedby: pickInFantasy.submittername,
+        score: pickInFantasy.score,
+        teamname: teamInFantasy.name,
+        player1name: p1.name,
+        player2name: p2.name,
+        player3name: p3.name,
+        p1score: pp1.points,
+        p2score: pp2.points,
+        p3score: pp3.points,
+        tscore: teamPickInFantasy.points,
+      })
+      .from(leaderboardInFantasy)
+      .leftJoin(
+        scheduleInFantasy,
+        eq(leaderboardInFantasy.scheduleid, scheduleInFantasy.scheduleid),
+      )
+      .leftJoin(
+        pickInFantasy,
+        eq(leaderboardInFantasy.leaderboardid, pickInFantasy.leaderboardid),
+      )
+      .leftJoin(teamInFantasy, eq(pickInFantasy.teamid, teamInFantasy.teamid))
+      .leftJoin(p1, eq(pickInFantasy.player1id, p1.playerid))
+      .leftJoin(p2, eq(pickInFantasy.player2id, p2.playerid))
+      .leftJoin(p3, eq(pickInFantasy.player3id, p3.playerid))
+      .leftJoin(
+        pp1,
+        and(
+          eq(pickInFantasy.pickid, pp1.pickid),
+          eq(pickInFantasy.player1id, pp1.playerid),
+        ),
+      )
+      .leftJoin(
+        pp2,
+        and(
+          eq(pickInFantasy.pickid, pp2.pickid),
+          eq(pickInFantasy.player2id, pp2.playerid),
+        ),
+      )
+      .leftJoin(
+        pp3,
+        and(
+          eq(pickInFantasy.pickid, pp3.pickid),
+          eq(pickInFantasy.player3id, pp3.playerid),
+        ),
+      )
+      .leftJoin(
+        teamPickInFantasy,
+        eq(pickInFantasy.pickid, teamPickInFantasy.pickid),
+      )
+      .where(
+        and(
+          eq(scheduleInFantasy.division, division),
+          eq(scheduleInFantasy.week, week),
+        ),
+      )
+      .orderBy(desc(pickInFantasy.score));
 
     if (rows.length === 0) return null;
 
     const first = rows[0];
 
     const leaderboard: LeaderboardWithPickNames = {
-      leaderboardid: first.leaderboardid,
-      division: first.division,
-      week: first.week,
-      matchlink: first.matchlink,
+      scheduleid: first.scheduleid!,
+      leaderboardid: first.leaderboardid!,
+      matchlink: first.matchlink!,
       Picks: rows
         .filter((row) => row.pickid !== null)
         .map((row) => ({
-          PickID: row.pickid,
-          Division: row.division,
-          Week: row.week,
-          SubmittedOn: row.submittedon,
-          SubmittedBy: row.submittedby,
-          Score: row.score,
-          TeamName: row.teamname,
-          Player1Name: row.player1name,
-          Player2Name: row.player2name,
-          Player3Name: row.player3name,
-          LeaderboardID: row.leaderboardid,
-          P1Score: row.p1score,
-          P2Score: row.p2score,
-          P3Score: row.p3score,
-          TScore: row.tscore,
+          PickID: row.pickid!,
+          Division: row.division!,
+          Week: row.week!,
+          SubmittedOn: new Date(row.submittedon!),
+          SubmittedBy: row.submittedby!,
+          Score: Number(row.score!),
+          TeamName: row.teamname!,
+          Player1Name: row.player1name!,
+          Player2Name: row.player2name!,
+          Player3Name: row.player3name!,
+          LeaderboardID: row.leaderboardid!,
+          P1Score: Number(row.p1score!),
+          P2Score: Number(row.p2score!),
+          P3Score: Number(row.p3score!),
+          TScore: Number(row.tscore!),
         })),
+      Week: first.week!,
+      Division: first.division!,
     };
 
     return leaderboard;
@@ -299,5 +376,69 @@ export async function getTeamsWithPlayerNames(): Promise<
   } catch (e) {
     console.error("Database error: ", e);
     throw new Error("Database failed to retrieve Teams with Player Names");
+  }
+}
+
+export async function getLeaderboardIDByDivisionAndWeek(
+  division: number,
+  week: number,
+): Promise<string | null> {
+  try {
+    const rows = await db
+      .select({ leaderboardid: leaderboardInFantasy.leaderboardid })
+      .from(leaderboardInFantasy)
+      .leftJoin(
+        scheduleInFantasy,
+        eq(leaderboardInFantasy.scheduleid, scheduleInFantasy.scheduleid),
+      )
+      .where(
+        and(
+          eq(scheduleInFantasy.division, division),
+          eq(scheduleInFantasy.week, week),
+        ),
+      );
+    if (rows.length === 0) return null;
+    return rows[0].leaderboardid;
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve LeaderboardIDs");
+  }
+}
+
+export async function getScheduleIDByDivisionAndWeek(
+  division: number,
+  week: number,
+): Promise<string | null> {
+  try {
+    const rows = await db
+      .select({ scheduleid: scheduleInFantasy.scheduleid })
+      .from(scheduleInFantasy)
+      .where(
+        and(
+          eq(scheduleInFantasy.division, division),
+          eq(scheduleInFantasy.week, week),
+        ),
+      );
+    if (rows.length === 0) return null;
+    return rows[0].scheduleid;
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve ScheduleID");
+  }
+}
+
+export async function getLeaderboardIDByScheduleID(
+  scheduleID: string,
+): Promise<string | null> {
+  try {
+    const rows = await db
+      .select({ leaderboardid: leaderboardInFantasy.leaderboardid })
+      .from(leaderboardInFantasy)
+      .where(eq(leaderboardInFantasy.scheduleid, scheduleID));
+    if (rows.length === 0) return null;
+    return rows[0].leaderboardid;
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve LeaderboardID");
   }
 }

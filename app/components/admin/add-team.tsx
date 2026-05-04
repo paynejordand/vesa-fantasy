@@ -12,6 +12,7 @@ interface AddTeamComponentProps {
   onAdd: (
     teamName: string,
     division: number,
+    season: number,
     players: { name: string; osLink: string }[],
   ) => Promise<ActionResult>;
 }
@@ -57,7 +58,7 @@ export function AddTeamForm({ divisionCounts, onAdd }: AddTeamComponentProps) {
   async function handleSubmit() {
     if (!canSubmit || !selectedDivision) return;
     setError(null);
-    const result = await onAdd(teamName, selectedDivision, players);
+    const result = await onAdd(teamName, selectedDivision, 13, players);
     if (!result.success) {
       setError(result.message);
       return;

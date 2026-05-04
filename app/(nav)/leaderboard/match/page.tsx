@@ -33,14 +33,14 @@ export default async function Page({ searchParams }: PageProps) {
 
   return (
     <div className="flex flex-col">
-      {leaderboard ? (
+      {leaderboard?.matchlink ? (
         <Leaderboard leaderboard={leaderboard} />
       ) : (
         <p className="text-center text-red-600">
           No leaderboard data available for Div {division}, Week {weekNumber}
         </p>
       )}
-      {user?.role === "Admin" && !leaderboard && (
+      {user?.role === "Admin" && !leaderboard?.matchlink && (
         <CalcLeaderboard division={division} week={weekNumber} />
       )}
     </div>

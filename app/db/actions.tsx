@@ -1,12 +1,13 @@
 "use server";
 
-import { sql, db, txDB } from "@/app/db/db";
-import { sql as drizzleSQL, SQL, getTableColumns, eq, and } from "drizzle-orm";
-import { PgTable } from "drizzle-orm/pg-core";
+import { db, txDB } from "@/app/db/db";
+import { sql as drizzleSQL, eq, and, or } from "drizzle-orm";
 import { PlayerStat } from "@/app/db/definitions";
 import {
   getTeamIDByTeamNameAndDivision,
   getPlayerIDByPlayerLink,
+  getScheduleIDByDivisionAndWeek,
+  getLeaderboardIDByScheduleID,
 } from "@/app/db/data";
 import { parseMatchLinkID, getOverstatStatsFromMatchID } from "@/app/lib/utils";
 import {
@@ -21,7 +22,11 @@ import {
   leaderboardInFantasy,
   pickInFantasy,
   playerInFantasy,
+  playerMatchResultInFantasy,
   teamInFantasy,
+  teamPickInFantasy,
+  playerPickInFantasy,
+  playerSeasonInFantasy,
 } from "@/app/db/schema";
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/app/lib/dal";
@@ -30,31 +35,12 @@ export type ActionResult =
   | { success: true }
   | { success: false; message: string };
 
-const buildConflictUpdateColumns = <
-  T extends PgTable,
-  Q extends keyof T["_"]["columns"],
->(
-  table: T,
-  columns: Q[],
-) => {
-  const cls = getTableColumns(table);
-
-  return columns.reduce(
-    (acc, column) => {
-      const colName = cls[column].name;
-      acc[column] = drizzleSQL.raw(`excluded.${colName}`);
-
-      return acc;
-    },
-    {} as Record<Q, SQL>,
-  );
-};
-
 export async function submitDraft(
-  draftedTeam: string | null,
+  draftedTeam: string,
   draftedPlayers: string[],
   division: number,
   week: number,
+  leaderboardid: string,
 ) {
   try {
     const user = await getUser();
@@ -63,20 +49,16 @@ export async function submitDraft(
     const res = await db
       .insert(pickInFantasy)
       .values({
-        division: division,
-        week: week,
-        submittedby: user.name,
-        teamid: draftedTeam!,
+        leaderboardid: leaderboardid,
+        submitterid: user.id,
+        submittername: user.name,
+        teamid: draftedTeam,
         player1id: draftedPlayers[0],
         player2id: draftedPlayers[1],
         player3id: draftedPlayers[2],
       })
       .onConflictDoUpdate({
-        target: [
-          pickInFantasy.submittedby,
-          pickInFantasy.division,
-          pickInFantasy.week,
-        ],
+        target: [pickInFantasy.submitterid, pickInFantasy.leaderboardid],
         set: {
           teamid: drizzleSQL.raw(`EXCLUDED.teamid`),
           player1id: drizzleSQL.raw(`EXCLUDED.player1id`),
@@ -94,34 +76,52 @@ export async function submitDraft(
 }
 
 export async function handleTeamScoreInDB(
-  id: string,
-  score: number,
-  week: number,
-  division: number,
+  teamid: string,
+  points: number,
+  leaderboardid: string,
 ) {
   try {
-    // await sql.transaction([
-    //   sql`UPDATE Fantasy.Pick SET tscore = ${score} WHERE teamid = ${id} AND week = ${week} AND division = ${division}`,
-    //   sql`UPDATE Fantasy.Team SET overallpoints = overallpoints + ${score}, weeksplayed = weeksplayed + 1 WHERE teamid = ${id}`,
-    // ]);
     await txDB.transaction(async (tx) => {
-      tx.update(pickInFantasy)
-        .set({
-          tscore: String(score),
+      const picks = await tx
+        .select({
+          pickid: pickInFantasy.pickid,
         })
+        .from(pickInFantasy)
         .where(
           and(
-            eq(pickInFantasy.teamid, id),
-            eq(pickInFantasy.week, week),
-            eq(pickInFantasy.division, division),
+            eq(pickInFantasy.teamid, teamid),
+            eq(pickInFantasy.leaderboardid, leaderboardid),
           ),
         );
-      tx.update(teamInFantasy)
-        .set({
-          overallpoints: drizzleSQL.raw(`overallpoints + ${score}`),
-          weeksplayed: drizzleSQL.raw(`weeksplayed + 1`),
-        })
-        .where(eq(teamInFantasy.teamid, id));
+      console.log(picks);
+      picks.forEach(async (pick) => {
+        await tx
+          .insert(teamPickInFantasy)
+          .values({
+            pickid: pick.pickid,
+            teamid: teamid,
+            points: String(points),
+          })
+          .onConflictDoUpdate({
+            target: [teamPickInFantasy.pickid, teamPickInFantasy.teamid],
+            set: {
+              points: drizzleSQL.raw(`EXCLUDED.points`),
+            },
+          });
+        await tx
+          .update(pickInFantasy)
+          .set({
+            score: drizzleSQL.raw(`score + ${points}`),
+          })
+          .where(eq(pickInFantasy.pickid, pick.pickid));
+        await tx
+          .update(teamInFantasy)
+          .set({
+            overallpoints: drizzleSQL.raw(`overallpoints + ${points}`),
+            weeksplayed: drizzleSQL.raw(`weeksplayed + 1`),
+          })
+          .where(eq(teamInFantasy.teamid, teamid));
+      });
     });
   } catch (error) {
     console.error("Transaction failed, all changes rolled back:", error);
@@ -129,89 +129,101 @@ export async function handleTeamScoreInDB(
 }
 
 export async function handlePlayerScoreInDB(
-  id: string,
-  score: number,
-  week: number,
-  division: number,
+  playerid: string,
+  points: number,
+  leaderboardid: string,
 ) {
-  // await sql.transaction([
-  //   sql`UPDATE Fantasy.Pick
-  //       SET P1Score = CASE WHEN Player1ID = ${id} THEN ${score} ELSE P1Score END,
-  //           P2Score = CASE WHEN Player2ID = ${id} THEN ${score} ELSE P2Score END,
-  //           P3Score = CASE WHEN Player3ID = ${id} THEN ${score} ELSE P3Score END
-  //       WHERE (Player1ID = ${id} OR Player2ID = ${id} OR Player3ID = ${id})
-  //       AND week = ${week} AND division = ${division}`,
-  //   sql`UPDATE Fantasy.Player SET overallpoints = overallpoints + ${score}, gamesplayed = gamesplayed + 1 WHERE playerid = ${id}`,
-  // ]);
   await txDB.transaction(async (tx) => {
-    tx.update(pickInFantasy)
-      .set({
-        p1score: drizzleSQL.raw(
-          `CASE WHEN Player1ID = ${id} THEN ${score} ELSE P1Score END`,
-        ),
-        p2score: drizzleSQL.raw(
-          `CASE WHEN Player2ID = ${id} THEN ${score} ELSE P2Score END`,
-        ),
-        p3score: drizzleSQL.raw(
-          `CASE WHEN Player3ID = ${id} THEN ${score} ELSE P3Score END`,
-        ),
+    await tx
+      .insert(playerMatchResultInFantasy)
+      .values({
+        playerid: playerid,
+        leaderboardid: leaderboardid,
+        points: String(points),
       })
+      .onConflictDoUpdate({
+        target: [
+          playerMatchResultInFantasy.playerid,
+          playerMatchResultInFantasy.leaderboardid,
+        ],
+        set: {
+          points: drizzleSQL.raw(`EXCLUDED.points`),
+        },
+      });
+    const picks = await tx
+      .select({
+        pickid: pickInFantasy.pickid,
+        player1id: pickInFantasy.player1id,
+        player2id: pickInFantasy.player2id,
+        player3id: pickInFantasy.player3id,
+      })
+      .from(pickInFantasy)
       .where(
         and(
-          eq(pickInFantasy.player1id, id),
-          eq(pickInFantasy.week, week),
-          eq(pickInFantasy.division, division),
+          eq(pickInFantasy.leaderboardid, leaderboardid),
+          or(
+            eq(pickInFantasy.player1id, playerid),
+            eq(pickInFantasy.player2id, playerid),
+            eq(pickInFantasy.player3id, playerid),
+          ),
         ),
       );
-    tx.update(playerInFantasy)
-      .set({
-        overallpoints: drizzleSQL.raw(`overallpoints + ${score}`),
-        gamesplayed: drizzleSQL.raw(`gamesplayed + 1`),
-      })
-      .where(eq(playerInFantasy.playerid, id));
+    picks.forEach(async (pick) => {
+      await tx
+        .insert(playerPickInFantasy)
+        .values({
+          pickid: pick.pickid,
+          playerid: playerid,
+          points: String(points),
+        })
+        .onConflictDoUpdate({
+          target: [playerPickInFantasy.pickid, playerPickInFantasy.playerid],
+          set: {
+            points: drizzleSQL.raw(`EXCLUDED.points`),
+          },
+        })
+        .returning({ playerpickid: playerPickInFantasy.playerpickid });
+      await tx
+        .update(pickInFantasy)
+        .set({
+          score: drizzleSQL.raw(`score + ${points}`),
+        })
+        .where(
+          and(
+            or(
+              eq(pickInFantasy.player1id, playerid),
+              eq(pickInFantasy.player2id, playerid),
+              eq(pickInFantasy.player3id, playerid),
+            ),
+            eq(pickInFantasy.pickid, pick.pickid),
+          ),
+        );
+      await tx
+        .update(playerSeasonInFantasy)
+        .set({
+          overallpoints: drizzleSQL.raw(`overallpoints + ${points}`),
+          gamesplayed: drizzleSQL.raw(`gamesplayed + 1`),
+        })
+        .where(eq(playerSeasonInFantasy.playerid, playerid));
+    });
   });
 }
 
 async function insertLeaderboard(
-  division: number,
-  week: number,
+  scheduleid: string,
   matchLink: string,
 ): Promise<ActionResult> {
   try {
-    // await sql.transaction([
-    //   sql`INSERT INTO Fantasy.Leaderboard (Division, Week, MatchLink)
-    //           VALUES (${division}, ${week}, ${matchLink})`,
-    //   sql`UPDATE Fantasy.Pick
-    //           SET LeaderboardID = (
-    //               SELECT LeaderboardID FROM Fantasy.Leaderboard
-    //               WHERE Division = ${division} AND Week = ${week}
-    //           )
-    //           WHERE Division = ${division}
-    //             AND Week = ${week}
-    //             AND LeaderboardID IS NULL`,
-    // ]);
-
-    await txDB.transaction(async (tx) => {
-      const leaderboardid = await tx
-        .insert(leaderboardInFantasy)
-        .values({
-          division: division,
-          week: week,
-          matchlink: matchLink,
-        })
-        .returning({ leaderboardid: leaderboardInFantasy.leaderboardid });
-      tx.update(pickInFantasy)
-        .set({
-          leaderboardid: leaderboardid[0].leaderboardid,
-        })
-        .where(
-          and(
-            eq(pickInFantasy.division, division),
-            eq(pickInFantasy.week, week),
-          ),
-        );
-    });
-
+    const leaderboard = await db
+      .update(leaderboardInFantasy)
+      .set({
+        matchlink: matchLink,
+      })
+      .where(eq(leaderboardInFantasy.scheduleid, scheduleid))
+      .returning({
+        leaderboardid: leaderboardInFantasy.leaderboardid,
+      });
+    console.log("Leaderboard update result: ", leaderboard);
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -229,11 +241,34 @@ export async function scoreDraft(
 ) {
   const user = await getUser();
   if (user?.role !== "Admin") return null;
+  console.log(
+    `Scoring draft for Division ${division}, Week ${week} with match link ${matchLink} -----------------------------------`,
+  );
 
   const matchID = parseMatchLinkID(matchLink);
   const overstatData = await getOverstatStatsFromMatchID(matchID);
 
   const teams = overstatData.teams;
+
+  const scheduleid = await getScheduleIDByDivisionAndWeek(division, week);
+  if (!scheduleid) {
+    console.error(
+      "No schedule found for division " + division + " and week " + week,
+    );
+    return {
+      success: false,
+      message: "No schedule found for the specified division and week.",
+    };
+  }
+
+  const leaderboardid = await getLeaderboardIDByScheduleID(scheduleid);
+  if (!leaderboardid) {
+    console.error("No leaderboard found for schedule ID " + scheduleid);
+    return {
+      success: false,
+      message: "No leaderboard found for the specified schedule.",
+    };
+  }
 
   teams.forEach(
     async (team: {
@@ -250,7 +285,7 @@ export async function scoreDraft(
           division,
         );
         if (teamID === null) return;
-        await handleTeamScoreInDB(teamID, score, week, division);
+        await handleTeamScoreInDB(teamID, score, leaderboardid);
       } catch (e) {
         console.error("Database Error: ", e);
         return {
@@ -283,7 +318,7 @@ export async function scoreDraft(
           const pLink = `https://overstat.gg/player/${player.playerId}`;
           const playerID = await getPlayerIDByPlayerLink(pLink);
           if (playerID === null) return;
-          await handlePlayerScoreInDB(playerID, score, week, division);
+          await handlePlayerScoreInDB(playerID, score, leaderboardid);
         } catch (e) {
           console.error(e);
           return {
@@ -295,7 +330,7 @@ export async function scoreDraft(
     },
   );
   try {
-    await insertLeaderboard(division, week, matchLink);
+    await insertLeaderboard(scheduleid, matchLink);
   } catch (e) {
     console.error("Error inserting leaderboard: ", e);
     return {
@@ -307,22 +342,34 @@ export async function scoreDraft(
   }
 }
 
-export async function deletePickByUsername(
-  name: string,
+export async function deletePickByUserID(
+  id: string,
   division: number,
   week: number,
 ) {
   try {
-    await sql`DELETE FROM Fantasy.Pick WHERE submittedby = ${name} AND division = ${division} AND week = ${week}`;
-    await db
-      .delete(pickInFantasy)
-      .where(
-        and(
-          eq(pickInFantasy.submittedby, name),
-          eq(pickInFantasy.division, division),
-          eq(pickInFantasy.week, week),
-        ),
-      );
+    await txDB.transaction(async (tx) => {
+      const scheduleid = await getScheduleIDByDivisionAndWeek(division, week);
+      if (!scheduleid) {
+        console.error(
+          "No schedule found for division " + division + " and week " + week,
+        );
+        return;
+      }
+      const leaderboardid = await getLeaderboardIDByScheduleID(scheduleid);
+      if (!leaderboardid) {
+        console.error("No leaderboard found for schedule ID " + scheduleid);
+        return;
+      }
+      await tx
+        .delete(pickInFantasy)
+        .where(
+          and(
+            eq(pickInFantasy.submitterid, id),
+            eq(pickInFantasy.leaderboardid, leaderboardid),
+          ),
+        );
+    });
   } catch (e) {
     console.error("Database error: ", e);
   } finally {
@@ -354,13 +401,13 @@ export async function removePlayersFromTeam(
           .where(eq(teamInFantasy.teamid, teamID));
 
         await tx
-          .update(playerInFantasy)
+          .update(playerSeasonInFantasy)
           .set({
             divisions: drizzleSQL.raw(
               `array_remove(Divisions, ${division}::SMALLINT)`,
             ),
           })
-          .where(eq(playerInFantasy.playerid, playerID));
+          .where(eq(playerSeasonInFantasy.playerid, playerID));
       });
     }
     revalidatePath("/admin");
@@ -377,39 +424,44 @@ export async function removePlayersFromTeam(
 export async function addPlayerToTeam(
   teamID: string,
   division: number,
+  season: number,
   players: { name: string; osLink: string }[],
 ): Promise<ActionResult> {
   try {
     for (const player of players) {
       const sanitizedLink = `https://overstat.gg/player/${player.osLink.match(/\/player\/(\d+)/)?.[1] ?? ""}`;
-
       await txDB.transaction(async (tx) => {
-        await tx
+        const res = await tx
           .insert(playerInFantasy)
           .values({
             name: player.name,
             osLink: sanitizedLink,
-            divisions: drizzleSQL`ARRAY[${division}]::SMALLINT[]`,
           })
+          .returning({ playerid: playerInFantasy.playerid })
           .onConflictDoUpdate({
             target: playerInFantasy.osLink,
             set: {
-              divisions: drizzleSQL`
-                CASE
-                    WHEN ${division} = ANY(Fantasy.Player.Divisions)
-                    THEN Fantasy.Player.Divisions
-                    ELSE array_append(Fantasy.Player.Divisions, ${division}::SMALLINT)
-                END
-            `,
+              name: drizzleSQL.raw(`EXCLUDED.name`),
             },
           });
+
+        const playerID = res[0].playerid;
+
+        await tx
+          .update(playerSeasonInFantasy)
+          .set({
+            divisions: drizzleSQL.raw(
+              `CASE WHEN ${division} = ANY(Divisions) THEN Divisions ELSE array_append(Divisions, ${division}::SMALLINT) END`,
+            ),
+          })
+          .where(eq(playerSeasonInFantasy.playerid, playerID));
 
         await tx
           .update(teamInFantasy)
           .set({
-            player1id: drizzleSQL`CASE WHEN player1id IS NULL THEN (SELECT playerid FROM Fantasy.Player WHERE OS_Link = ${sanitizedLink}) ELSE player1id END`,
-            player2id: drizzleSQL`CASE WHEN player1id IS NOT NULL AND player2id IS NULL THEN (SELECT playerid FROM Fantasy.Player WHERE OS_Link = ${sanitizedLink}) ELSE player2id END`,
-            player3id: drizzleSQL`CASE WHEN player1id IS NOT NULL AND player2id IS NOT NULL AND player3id IS NULL THEN (SELECT playerid FROM Fantasy.Player WHERE OS_Link = ${sanitizedLink}) ELSE player3id END`,
+            player1id: drizzleSQL`CASE WHEN player1id IS NULL THEN ${playerID} ELSE player1id END`,
+            player2id: drizzleSQL`CASE WHEN player1id IS NOT NULL AND player2id IS NULL THEN ${playerID} ELSE player2id END`,
+            player3id: drizzleSQL`CASE WHEN player1id IS NOT NULL AND player2id IS NOT NULL AND player3id IS NULL THEN ${playerID} ELSE player3id END`,
           })
           .where(eq(teamInFantasy.teamid, teamID));
       });
@@ -450,13 +502,13 @@ export async function removeTeam(teamIDs: string[]): Promise<ActionResult> {
         await tx.delete(teamInFantasy).where(eq(teamInFantasy.teamid, teamID));
         for (const playerID of playerIDs) {
           await tx
-            .update(playerInFantasy)
+            .update(playerSeasonInFantasy)
             .set({
               divisions: drizzleSQL.raw(
-                `array_remove(Fantasy.Player.Divisions, ${division}::SMALLINT)`,
+                `array_remove(Fantasy.PlayerSeason.Divisions, ${division}::SMALLINT)`,
               ),
             })
-            .where(eq(playerInFantasy.playerid, playerID));
+            .where(eq(playerSeasonInFantasy.playerid, playerID));
         }
       });
     }
@@ -475,6 +527,7 @@ export async function removeTeam(teamIDs: string[]): Promise<ActionResult> {
 export async function addTeam(
   teamName: string,
   division: number,
+  season: number,
   players: { name: string; osLink: string }[],
 ): Promise<ActionResult> {
   try {
@@ -496,10 +549,11 @@ export async function addTeam(
       .values({
         name: teamName.trim().replace(/'/g, ""),
         division: division,
+        season: season,
       })
       .returning({ teamid: teamInFantasy.teamid });
 
-    await addPlayerToTeam(teamID[0].teamid, division, sanitizedPlayers);
+    await addPlayerToTeam(teamID[0].teamid, division, season, sanitizedPlayers);
 
     const playerIDs = await Promise.all(
       sanitizedPlayers.map((p) =>

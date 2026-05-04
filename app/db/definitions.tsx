@@ -1,12 +1,9 @@
-import { LeaderboardSelect } from "@/app/db/schema";
+import { LeaderboardSelect, PlayerSelect } from "@/app/db/schema";
 
-export interface Player {
-  PlayerID?: string;
-  Name: string;
-  OS_Link: string;
-  OverallPoints?: number;
-  Divisions?: number[];
-  GamesPlayed?: number;
+export interface Player extends PlayerSelect {
+  overallpoints: number;
+  divisions: number[];
+  gamesplayed: number;
 }
 
 export interface TeamWithPlayers {
@@ -25,12 +22,14 @@ export interface TeamWithPlayers {
 }
 
 export interface LeaderboardWithPickNames extends LeaderboardSelect {
+  Division: number;
+  Week: number;
   Picks: {
     PickID: string;
     SubmittedOn: Date;
     SubmittedBy: string;
     Score: number;
-    LeaderboardID: string | null;
+    LeaderboardID: string;
     TeamName: string;
     Player1Name: string;
     Player2Name: string;

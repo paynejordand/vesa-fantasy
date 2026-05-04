@@ -2,20 +2,23 @@
 
 import { PlayerList } from "@/app/components/draft/player-list";
 import { TeamList } from "@/app/components/draft/team-list";
+import { Player } from "@/app/db/definitions";
 import { PlayerSelect, TeamSelect, PickSelect } from "@/app/db/schema";
 import { useState } from "react";
 
 interface DraftComponentProps {
-  players: PlayerSelect[];
+  players: Player[];
   teams: TeamSelect[];
   division: number;
   week: number;
+  leaderboardID: string;
   initialPick?: PickSelect | null;
   onSubmit: (
     team: string,
     players: string[],
     division: number,
     week: number,
+    leaderboardID: string,
   ) => void;
   onDelete: (name: string, division: number, week: number) => void;
 }
@@ -26,6 +29,7 @@ export function DraftComponent({
   division,
   week,
   initialPick,
+  leaderboardID,
   onSubmit,
   onDelete,
 }: DraftComponentProps) {
@@ -68,7 +72,7 @@ export function DraftComponent({
     }
     setError(null);
     try {
-      onSubmit(selectedTeam, selectedPlayers, division, week);
+      onSubmit(selectedTeam, selectedPlayers, division, week, leaderboardID);
     } catch {
       setError(
         "An error occurred while submitting your pick. Please try again.",
@@ -95,7 +99,7 @@ export function DraftComponent({
           </button>
           <button
             onClick={() =>
-              onDelete(initialPick?.submittedby ?? "", division, week)
+              onDelete(initialPick?.submitterid ?? "", division, week)
             }
             className="border border-red-500 px-6 py-2 font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
           >

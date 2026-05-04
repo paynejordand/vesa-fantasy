@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { PlayerSelect, TeamSelect } from "@/app/db/schema";
+import { Player } from "@/app/db/definitions";
 import Link from "next/link";
 
 interface PlayerListProps {
-  allPlayers: PlayerSelect[];
+  allPlayers: Player[];
   allTeams: TeamSelect[];
   maxPlayers: number;
   selectedPlayers: string[];

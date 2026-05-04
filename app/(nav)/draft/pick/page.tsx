@@ -3,10 +3,11 @@ import { getUser } from "@/app/lib/dal";
 import {
   getPlayersByDivision,
   getTeamsByDivision,
-  getPickByUsername,
+  getPickByUserID,
   getMatchStartTimeByDivisionAndWeek,
+  getLeaderboardIDByDivisionAndWeek,
 } from "@/app/db/data";
-import { submitDraft, deletePickByUsername } from "@/app/db/actions";
+import { submitDraft, deletePickByUserID } from "@/app/db/actions";
 import { clamp } from "@/app/lib/utils";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
@@ -33,11 +34,12 @@ export default async function Page({ searchParams }: PageProps) {
   const division = clamp(1, 7, div ? Number(div) : 1);
   const weekNumber = clamp(1, 7, week ? Number(week) : 1);
 
-  const [players, teams, pick, gamedate] = await Promise.all([
+  const [players, teams, pick, gamedate, leaderboardID] = await Promise.all([
     getPlayersByDivision(division),
     getTeamsByDivision(division),
-    getPickByUsername(user.name, division, weekNumber),
+    getPickByUserID(user.id, division, weekNumber),
     getMatchStartTimeByDivisionAndWeek(division, weekNumber),
+    getLeaderboardIDByDivisionAndWeek(division, weekNumber),
   ]);
 
   const hasStarted = gamedate && gamedate <= new Date();
@@ -81,9 +83,10 @@ export default async function Page({ searchParams }: PageProps) {
           teams={teams}
           division={division}
           week={weekNumber}
+          leaderboardID={leaderboardID!}
           initialPick={pick}
           onSubmit={submitDraft}
-          onDelete={deletePickByUsername}
+          onDelete={deletePickByUserID}
         />
       )}
     </div>

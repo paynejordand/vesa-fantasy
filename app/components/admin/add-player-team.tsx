@@ -22,6 +22,7 @@ interface AddPlayersComponentProps {
   onAdd: (
     teamID: string,
     division: number,
+    season: number,
     players: PlayerInput[],
   ) => Promise<ActionResult>;
 }
@@ -81,7 +82,7 @@ export function AddPlayerToTeamForm({
     if (!selectedTeamID || !selectedDivision) return;
     const valid = players.filter((p) => p.name.trim() && p.osLink.trim());
     if (valid.length === 0) return;
-    const result = await onAdd(selectedTeamID, selectedDivision, valid);
+    const result = await onAdd(selectedTeamID, selectedDivision, 13, valid);
     if (!result.success) {
       console.error(result.message);
       return;

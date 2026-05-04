@@ -14,13 +14,13 @@ function getSortedPlayers(pick: LeaderboardWithPickNames["Picks"][0]) {
 }
 
 export function Leaderboard({ leaderboard }: LeaderboardComponentInterface) {
-  const { Division, Week, MatchLink, Picks } = leaderboard;
+  const { matchlink, Division, Week, Picks } = leaderboard;
 
   return (
     <div className="p-4 overflow-x-auto">
       <h2 className="text-center text-lg font-medium mb-4">
         <Link
-          href={MatchLink}
+          href={matchlink ?? "#"}
           target="_blank"
           rel="noreferrer"
           className="hover:underline text-blue-500"

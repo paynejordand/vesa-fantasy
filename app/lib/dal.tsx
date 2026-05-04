@@ -13,8 +13,6 @@ export const verifySession = cache(async (): Promise<Session | null> => {
 
 export const getUser = cache(async (): Promise<SessionUser | null> => {
   const session = await verifySession();
-  console.log("Session in getUser:");
-  console.log(session);
   if (!session) return null;
 
   const isAdmin = await getAdminByUsername(session.user!.name!);
