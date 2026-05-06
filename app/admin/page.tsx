@@ -12,6 +12,7 @@ import {
   removeTeam,
   addTeam,
 } from "@/app/db/actions";
+import { CSVImportComponent } from "../components/admin/csv-import";
 
 export const metadata: Metadata = {
   title: "Admin Dashboard",
@@ -42,10 +43,13 @@ export default async function Page() {
     );
   }
   const divisions = [...new Set(teams.map((t) => t.Division))].sort();
-  const divisionCounts = [1, 2, 3, 4, 5, 6, 7].map((div) => ({
+  const divisionCounts = divisions.map((div) => ({
     division: div,
     count: teams.filter((t) => t.Division === div).length,
   }));
+
+  const season = teams[0].Season;
+  
 
   const tabs = [
     {
@@ -64,6 +68,7 @@ export default async function Page() {
         <AddPlayerToTeamForm
           teams={teams}
           divisions={divisions}
+          season={season}
           onAdd={addPlayerToTeam}
         />
       ),
@@ -83,6 +88,10 @@ export default async function Page() {
       component: (
         <AddTeamForm divisionCounts={divisionCounts} onAdd={addTeam} />
       ),
+    },
+    {
+      label: "Insert Rosters",
+      component: <CSVImportComponent />,
     },
   ];
 

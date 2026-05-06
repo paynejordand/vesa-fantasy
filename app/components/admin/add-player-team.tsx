@@ -19,6 +19,7 @@ interface PlayerInput {
 interface AddPlayersComponentProps {
   teams: Team[];
   divisions: number[];
+  season: number;
   onAdd: (
     teamID: string,
     division: number,
@@ -30,6 +31,7 @@ interface AddPlayersComponentProps {
 export function AddPlayerToTeamForm({
   teams,
   divisions,
+  season,
   onAdd,
 }: AddPlayersComponentProps) {
   const [selectedDivision, setSelectedDivision] = useState<number | null>(null);
@@ -79,10 +81,10 @@ export function AddPlayerToTeamForm({
   }
 
   async function handleSubmit() {
-    if (!selectedTeamID || !selectedDivision) return;
+    if (!selectedTeamID || !selectedDivision || !season) return;
     const valid = players.filter((p) => p.name.trim() && p.osLink.trim());
     if (valid.length === 0) return;
-    const result = await onAdd(selectedTeamID, selectedDivision, 13, valid);
+    const result = await onAdd(selectedTeamID, selectedDivision, season, valid);
     if (!result.success) {
       console.error(result.message);
       return;
@@ -157,9 +159,10 @@ export function AddPlayerToTeamForm({
 
               <button
                 onClick={handleSubmit}
-                disabled={players.every(
-                  (p) => !p.name.trim() || !p.osLink.trim(),
-                )}
+                disabled={
+                  !season ||
+                  players.every((p) => !p.name.trim() || !p.osLink.trim())
+                }
               >
                 Add Player(s)
               </button>

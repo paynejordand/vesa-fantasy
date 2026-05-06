@@ -14,7 +14,6 @@ export async function DiscordAvatar() {
 }
 
 export function DiscordSignIn() {
-  console.log("uh oh");
   return (
     <button
       onClick={async () => {

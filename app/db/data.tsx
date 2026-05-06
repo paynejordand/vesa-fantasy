@@ -14,11 +14,19 @@ import {
   teamPickInFantasy,
   PickSelect,
 } from "@/app/db/schema";
-import { PlayerSelect, TeamSelect, ScheduleSelect } from "@/app/db/schema";
-import { adminInFantasy, scheduleInFantasy } from "@/drizzle/schema";
+import { TeamSelect, ScheduleSelect } from "@/app/db/schema";
+import { adminInFantasy, fantasy, scheduleInFantasy } from "@/drizzle/schema";
 
 import { asc, desc } from "drizzle-orm/sql/expressions/select";
-import { sql as drizzleSQL, eq, and, or, arrayContains, gt } from "drizzle-orm";
+import {
+  sql as drizzleSQL,
+  eq,
+  and,
+  or,
+  arrayContains,
+  gt,
+  max,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 export async function getPickByUserID(
@@ -325,7 +333,7 @@ export async function getFutureMatchesFromSchedule(): Promise<Array<ScheduleSele
       .from(scheduleInFantasy)
       .where(gt(scheduleInFantasy.gamedate, now.toDateString()))
       .orderBy(asc(scheduleInFantasy.gamedate));
-    console.log("Future matches: ", rows);
+
     if (rows.length === 0) return null;
     return rows;
   } catch (error) {
@@ -338,30 +346,42 @@ export async function getTeamsWithPlayerNames(): Promise<
   Array<TeamWithPlayers>
 > {
   try {
-    const rows = await sql`
-    SELECT
-        t.teamid,
-        t.name,
-        t.division,
-        t.player1id,
-        t.player2id,
-        t.player3id,
-        p1.name AS player1name,
-        p1.os_link AS player1oslink,
-        p2.name AS player2name,
-        p2.os_link AS player2oslink,
-        p3.name AS player3name,
-        p3.os_link AS player3oslink
-    FROM Fantasy.Team t
-    LEFT JOIN Fantasy.Player p1 ON t.player1id = p1.playerid
-    LEFT JOIN Fantasy.Player p2 ON t.player2id = p2.playerid
-    LEFT JOIN Fantasy.Player p3 ON t.player3id = p3.playerid
-    ORDER BY t.division, t.name
-`;
+    const p1 = alias(playerInFantasy, "p1");
+    const p2 = alias(playerInFantasy, "p2");
+    const p3 = alias(playerInFantasy, "p3");
+
+    const sq = db
+      .select({ curr_season: max(teamInFantasy.season).as("curr_season") })
+      .from(teamInFantasy)
+      .as("sq");
+
+    const rows = await db
+      .select({
+        teamid: teamInFantasy.teamid,
+        name: teamInFantasy.name,
+        season: teamInFantasy.season,
+        division: teamInFantasy.division,
+        player1id: teamInFantasy.player1id,
+        player2id: teamInFantasy.player2id,
+        player3id: teamInFantasy.player3id,
+        player1name: p1.name,
+        player1oslink: p1.osLink,
+        player2name: p2.name,
+        player2oslink: p2.osLink,
+        player3name: p3.name,
+        player3oslink: p3.osLink,
+      })
+      .from(teamInFantasy)
+      .innerJoin(sq, eq(sq.curr_season, teamInFantasy.season))
+      .leftJoin(p1, eq(teamInFantasy.player1id, p1.playerid))
+      .leftJoin(p2, eq(teamInFantasy.player2id, p2.playerid))
+      .leftJoin(p3, eq(teamInFantasy.player3id, p3.playerid));
+
     if (rows.length === 0) return [];
     return rows.map((row) => ({
       TeamID: row.teamid,
       Name: row.name,
+      Season: row.season,
       Division: row.division,
       Player1ID: row.player1id,
       Player1Name: row.player1name ?? "",
@@ -396,7 +416,8 @@ export async function getLeaderboardIDByDivisionAndWeek(
           eq(scheduleInFantasy.division, division),
           eq(scheduleInFantasy.week, week),
         ),
-      );
+      )
+      .orderBy(desc(scheduleInFantasy.season));
     if (rows.length === 0) return null;
     return rows[0].leaderboardid;
   } catch (e) {
@@ -418,7 +439,8 @@ export async function getScheduleIDByDivisionAndWeek(
           eq(scheduleInFantasy.division, division),
           eq(scheduleInFantasy.week, week),
         ),
-      );
+      )
+      .orderBy(desc(scheduleInFantasy.season));
     if (rows.length === 0) return null;
     return rows[0].scheduleid;
   } catch (e) {

@@ -9,7 +9,11 @@ import {
   getScheduleIDByDivisionAndWeek,
   getLeaderboardIDByScheduleID,
 } from "@/app/db/data";
-import { parseMatchLinkID, getOverstatStatsFromMatchID } from "@/app/lib/utils";
+import {
+  parseMatchLinkID,
+  getOverstatStatsFromMatchID,
+  sanitizeOSLink,
+} from "@/app/lib/utils";
 import {
   placementScores,
   damageScore,
@@ -28,6 +32,7 @@ import {
   playerPickInFantasy,
   playerSeasonInFantasy,
 } from "@/app/db/schema";
+import { parseCSV } from "@/app/lib/utils";
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/app/lib/dal";
 
@@ -46,7 +51,7 @@ export async function submitDraft(
     const user = await getUser();
     if (!user) return null;
 
-    const res = await db
+    await db
       .insert(pickInFantasy)
       .values({
         leaderboardid: leaderboardid,
@@ -67,7 +72,6 @@ export async function submitDraft(
           submittedon: drizzleSQL.raw(`NOW()`),
         },
       });
-    console.log(res);
   } catch (error) {
     console.error("Database error: ", error);
   } finally {
@@ -93,7 +97,6 @@ export async function handleTeamScoreInDB(
             eq(pickInFantasy.leaderboardid, leaderboardid),
           ),
         );
-      console.log(picks);
       picks.forEach(async (pick) => {
         await tx
           .insert(teamPickInFantasy)
@@ -214,7 +217,7 @@ async function insertLeaderboard(
   matchLink: string,
 ): Promise<ActionResult> {
   try {
-    const leaderboard = await db
+    await db
       .update(leaderboardInFantasy)
       .set({
         matchlink: matchLink,
@@ -223,7 +226,6 @@ async function insertLeaderboard(
       .returning({
         leaderboardid: leaderboardInFantasy.leaderboardid,
       });
-    console.log("Leaderboard update result: ", leaderboard);
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -241,9 +243,6 @@ export async function scoreDraft(
 ) {
   const user = await getUser();
   if (user?.role !== "Admin") return null;
-  console.log(
-    `Scoring draft for Division ${division}, Week ${week} with match link ${matchLink} -----------------------------------`,
-  );
 
   const matchID = parseMatchLinkID(matchLink);
   const overstatData = await getOverstatStatsFromMatchID(matchID);
@@ -429,7 +428,7 @@ export async function addPlayerToTeam(
 ): Promise<ActionResult> {
   try {
     for (const player of players) {
-      const sanitizedLink = `https://overstat.gg/player/${player.osLink.match(/\/player\/(\d+)/)?.[1] ?? ""}`;
+      const sanitizedLink = sanitizeOSLink(player.osLink) ?? "";
       await txDB.transaction(async (tx) => {
         const res = await tx
           .insert(playerInFantasy)
@@ -448,13 +447,27 @@ export async function addPlayerToTeam(
         const playerID = res[0].playerid;
 
         await tx
-          .update(playerSeasonInFantasy)
-          .set({
-            divisions: drizzleSQL.raw(
-              `CASE WHEN ${division} = ANY(Divisions) THEN Divisions ELSE array_append(Divisions, ${division}::SMALLINT) END`,
-            ),
+          .insert(playerSeasonInFantasy)
+          .values({
+            playerid: playerID,
+            season: season,
+            divisions: drizzleSQL`ARRAY[${division}]::SMALLINT[]`,
           })
-          .where(eq(playerSeasonInFantasy.playerid, playerID));
+          .onConflictDoUpdate({
+            target: [
+              playerSeasonInFantasy.playerid,
+              playerSeasonInFantasy.season,
+            ],
+            set: {
+              divisions: drizzleSQL`
+                CASE
+                    WHEN ${division} = ANY(${playerSeasonInFantasy.divisions})
+                    THEN ${playerSeasonInFantasy.divisions}
+                    ELSE array_append(${playerSeasonInFantasy.divisions}, ${division}::SMALLINT)
+                END
+            `,
+            },
+          });
 
         await tx
           .update(teamInFantasy)
@@ -535,7 +548,7 @@ export async function addTeam(
       .filter((p) => p.name.trim() && p.osLink.trim())
       .map((p) => ({
         name: p.name.trim().replace(/'/g, ""),
-        osLink: `https://overstat.gg/player/${p.osLink.match(/\/player\/(\d+)/)?.[1] ?? ""}`,
+        osLink: sanitizeOSLink(p.osLink) ?? "",
       }));
 
     if (sanitizedPlayers.length === 0)
@@ -580,6 +593,102 @@ export async function addTeam(
     return {
       success: false,
       message: "A database error occurred. Please try again.",
+    };
+  }
+}
+
+// everybody say thank you claude
+export async function importTeamsFromCSV(
+  csvText: string,
+  division: number,
+  season: number,
+): Promise<ActionResult> {
+  try {
+    const teams = parseCSV(csvText);
+    if (teams.length === 0)
+      return { success: false, message: "No valid rows found in CSV." };
+
+    const allPlayers = teams.flatMap((t) =>
+      t.players.filter(Boolean).map((p) => ({ ...p!, teamName: t.teamName })),
+    );
+
+    for (const player of allPlayers) {
+      await db
+        .insert(playerInFantasy)
+        .values({ name: player.name, osLink: player.link })
+        .onConflictDoUpdate({
+          target: playerInFantasy.osLink,
+          set: { name: player.name },
+        });
+    }
+
+    for (const player of allPlayers) {
+      const existing = await db
+        .select({ playerid: playerInFantasy.playerid })
+        .from(playerInFantasy)
+        .where(eq(playerInFantasy.osLink, player.link));
+
+      if (!existing[0]) continue;
+
+      await db
+        .insert(playerSeasonInFantasy)
+        .values({
+          playerid: existing[0].playerid,
+          season: season,
+          divisions: drizzleSQL`ARRAY[${division}]::SMALLINT[]`,
+        })
+        .onConflictDoUpdate({
+          target: [
+            playerSeasonInFantasy.playerid,
+            playerSeasonInFantasy.season,
+          ],
+          set: {
+            divisions: drizzleSQL`
+                            CASE
+                                WHEN ${division} = ANY(${playerSeasonInFantasy.divisions})
+                                THEN ${playerSeasonInFantasy.divisions}
+                                ELSE array_append(${playerSeasonInFantasy.divisions}, ${division}::SMALLINT)
+                            END
+                        `,
+          },
+        });
+    }
+
+    for (const team of teams) {
+      const getID = async (p: { link: string } | null) => {
+        if (!p) return null;
+        const rows = await db
+          .select({ playerid: playerInFantasy.playerid })
+          .from(playerInFantasy)
+          .where(eq(playerInFantasy.osLink, p.link));
+        return rows[0]?.playerid ?? null;
+      };
+
+      const [id1, id2, id3] = await Promise.all([
+        getID(team.players[0]),
+        getID(team.players[1]),
+        getID(team.players[2]),
+      ]);
+
+      await db.insert(teamInFantasy).values({
+        name: team.teamName,
+        division: division,
+        season: season,
+        player1id: id1,
+        player2id: id2,
+        player3id: id3,
+      });
+    }
+
+    revalidatePath("/admin");
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("CSV import error:", error);
+    return {
+      success: false,
+      message: "A database error occurred during import.",
     };
   }
 }

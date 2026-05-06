@@ -9,6 +9,7 @@ export interface Player extends PlayerSelect {
 export interface TeamWithPlayers {
   TeamID: string;
   Name: string;
+  Season: number;
   Division: number;
   Player1ID: string | null;
   Player1Name: string | null;
