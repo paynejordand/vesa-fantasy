@@ -1,8 +1,9 @@
-import { sql, db } from "@/app/db/db";
+import { db } from "@/app/db/db";
 import {
   LeaderboardWithPickNames,
   Player,
   TeamWithPlayers,
+  PlayerResults,
 } from "@/app/db/definitions";
 import {
   playerInFantasy,
@@ -13,20 +14,16 @@ import {
   playerPickInFantasy,
   teamPickInFantasy,
   PickSelect,
+  playerMatchResultInFantasy,
 } from "@/app/db/schema";
-import { TeamSelect, ScheduleSelect } from "@/app/db/schema";
-import { adminInFantasy, fantasy, scheduleInFantasy } from "@/drizzle/schema";
+import {
+  TeamSelect,
+  ScheduleSelect,
+} from "@/app/db/schema";
+import { adminInFantasy, scheduleInFantasy } from "@/drizzle/schema";
 
 import { asc, desc } from "drizzle-orm/sql/expressions/select";
-import {
-  sql as drizzleSQL,
-  eq,
-  and,
-  or,
-  arrayContains,
-  gt,
-  max,
-} from "drizzle-orm";
+import { eq, and, arrayContains, gt, max } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 export async function getPickByUserID(
@@ -166,6 +163,7 @@ export async function getAdminByUsername(
 }
 
 export async function getLeaderboardByDivisionAndWeek(
+  season: number,
   division: number,
   week: number,
 ): Promise<LeaderboardWithPickNames | null> {
@@ -239,6 +237,7 @@ export async function getLeaderboardByDivisionAndWeek(
         and(
           eq(scheduleInFantasy.division, division),
           eq(scheduleInFantasy.week, week),
+          eq(scheduleInFantasy.season, season),
         ),
       )
       .orderBy(desc(pickInFantasy.score));
@@ -426,7 +425,7 @@ export async function getLeaderboardIDByDivisionAndWeek(
   }
 }
 
-export async function getScheduleIDByDivisionAndWeek(
+export async function getLatestSeasonScheduleIDByDivisionAndWeek(
   division: number,
   week: number,
 ): Promise<string | null> {
@@ -459,6 +458,29 @@ export async function getLeaderboardIDByScheduleID(
       .where(eq(leaderboardInFantasy.scheduleid, scheduleID));
     if (rows.length === 0) return null;
     return rows[0].leaderboardid;
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve LeaderboardID");
+  }
+}
+
+export async function getPlayerResultsByLeaderboardID(
+  leaderboardid: string,
+): Promise<PlayerResults[] | null> {
+  try {
+    const rows = await db
+      .select()
+      .from(playerMatchResultInFantasy)
+      .leftJoin(playerInFantasy, eq(playerInFantasy.playerid, playerMatchResultInFantasy.playerid))
+      .where(eq(playerMatchResultInFantasy.leaderboardid, leaderboardid));
+    if (rows.length === 0) return null;
+    return rows.map((row) => ({
+      playerid: row.playermatchresult.playerid,
+      leaderboardid: row.playermatchresult.leaderboardid,
+      playerresultid: row.playermatchresult.playerresultid,
+      points: row.playermatchresult.points,
+      Name: row.player!.name
+    }));
   } catch (e) {
     console.error("Database error: ", e);
     throw new Error("Database failed to retrieve LeaderboardID");

@@ -6,7 +6,7 @@ import { PlayerStat } from "@/app/db/definitions";
 import {
   getTeamIDByTeamNameAndDivision,
   getPlayerIDByPlayerLink,
-  getScheduleIDByDivisionAndWeek,
+  getLatestSeasonScheduleIDByDivisionAndWeek,
   getLeaderboardIDByScheduleID,
 } from "@/app/db/data";
 import {
@@ -86,6 +86,13 @@ export async function handleTeamScoreInDB(
 ) {
   try {
     await txDB.transaction(async (tx) => {
+      await tx
+        .update(teamInFantasy)
+        .set({
+          overallpoints: drizzleSQL.raw(`overallpoints + ${points}`),
+          weeksplayed: drizzleSQL.raw(`weeksplayed + 1`),
+        })
+        .where(eq(teamInFantasy.teamid, teamid));
       const picks = await tx
         .select({
           pickid: pickInFantasy.pickid,
@@ -117,13 +124,6 @@ export async function handleTeamScoreInDB(
             score: drizzleSQL.raw(`score + ${points}`),
           })
           .where(eq(pickInFantasy.pickid, pick.pickid));
-        await tx
-          .update(teamInFantasy)
-          .set({
-            overallpoints: drizzleSQL.raw(`overallpoints + ${points}`),
-            weeksplayed: drizzleSQL.raw(`weeksplayed + 1`),
-          })
-          .where(eq(teamInFantasy.teamid, teamid));
       });
     });
   } catch (error) {
@@ -153,6 +153,14 @@ export async function handlePlayerScoreInDB(
           points: drizzleSQL.raw(`EXCLUDED.points`),
         },
       });
+
+    await tx
+      .update(playerSeasonInFantasy)
+      .set({
+        overallpoints: drizzleSQL.raw(`overallpoints + ${points}`),
+        gamesplayed: drizzleSQL.raw(`gamesplayed + 1`),
+      })
+      .where(eq(playerSeasonInFantasy.playerid, playerid));
     const picks = await tx
       .select({
         pickid: pickInFantasy.pickid,
@@ -201,13 +209,6 @@ export async function handlePlayerScoreInDB(
             eq(pickInFantasy.pickid, pick.pickid),
           ),
         );
-      await tx
-        .update(playerSeasonInFantasy)
-        .set({
-          overallpoints: drizzleSQL.raw(`overallpoints + ${points}`),
-          gamesplayed: drizzleSQL.raw(`gamesplayed + 1`),
-        })
-        .where(eq(playerSeasonInFantasy.playerid, playerid));
     });
   });
 }
@@ -249,7 +250,10 @@ export async function scoreDraft(
 
   const teams = overstatData.teams;
 
-  const scheduleid = await getScheduleIDByDivisionAndWeek(division, week);
+  const scheduleid = await getLatestSeasonScheduleIDByDivisionAndWeek(
+    division,
+    week,
+  );
   if (!scheduleid) {
     console.error(
       "No schedule found for division " + division + " and week " + week,
@@ -348,7 +352,10 @@ export async function deletePickByUserID(
 ) {
   try {
     await txDB.transaction(async (tx) => {
-      const scheduleid = await getScheduleIDByDivisionAndWeek(division, week);
+      const scheduleid = await getLatestSeasonScheduleIDByDivisionAndWeek(
+        division,
+        week,
+      );
       if (!scheduleid) {
         console.error(
           "No schedule found for division " + division + " and week " + week,

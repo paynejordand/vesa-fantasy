@@ -1,4 +1,8 @@
-import { LeaderboardSelect, PlayerSelect } from "@/app/db/schema";
+import {
+  LeaderboardSelect,
+  PlayerSelect,
+  PlayerMatchResultSelect,
+} from "@/app/db/schema";
 
 export interface Player extends PlayerSelect {
   overallpoints: number;
@@ -40,6 +44,10 @@ export interface LeaderboardWithPickNames extends LeaderboardSelect {
     P3Score: number;
     TScore: number;
   }[];
+}
+
+export interface PlayerResults extends PlayerMatchResultSelect {
+  Name: string;
 }
 
 export interface PlayerStat {

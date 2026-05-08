@@ -2,7 +2,11 @@ import { getUser } from "@/app/lib/dal";
 import { clamp } from "@/app/lib/utils";
 import { CalcLeaderboard } from "@/app/components/leaderboard/calc-leaderboard";
 import { Leaderboard } from "@/app/components/leaderboard/leaderboard";
-import { getLeaderboardByDivisionAndWeek } from "@/app/db/data";
+import { PlayerResultsComponent } from "@/app/components/leaderboard/player-results";
+import {
+  getLeaderboardByDivisionAndWeek,
+  getPlayerResultsByLeaderboardID,
+} from "@/app/db/data";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -27,14 +31,21 @@ export default async function Page({ searchParams }: PageProps) {
   const weekNumber = clamp(1, 7, week ? Number(week) : 1);
 
   const leaderboard = await getLeaderboardByDivisionAndWeek(
+    13,
     division,
     weekNumber,
   );
 
+  const playerResults = await getPlayerResultsByLeaderboardID(
+    leaderboard!.leaderboardid,
+  );
   return (
     <div className="flex flex-col">
       {leaderboard?.matchlink ? (
-        <Leaderboard leaderboard={leaderboard} />
+        <>
+          <Leaderboard leaderboard={leaderboard} />
+          <PlayerResultsComponent playerResults={playerResults!} />
+        </>
       ) : (
         <p className="text-center text-red-600">
           No leaderboard data available for Div {division}, Week {weekNumber}
