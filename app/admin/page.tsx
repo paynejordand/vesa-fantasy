@@ -35,60 +35,61 @@ export default async function Page() {
   }
 
   const teams = await getTeamsWithPlayerNames();
-  if (!teams || teams.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-6 p-6">
-        <h1 className="text-2xl font-bold">Error loading admin data.</h1>
-      </div>
-    );
-  }
-  const divisions = [...new Set(teams.map((t) => t.Division))].sort();
+  const hasTeams = teams && teams.length > 0;
+
+  const divisions = hasTeams
+    ? [...new Set(teams.map((t) => t.Division))].sort()
+    : [];
+
   const divisionCounts = divisions.map((div) => ({
     division: div,
-    count: teams.filter((t) => t.Division === div).length,
+    count: teams!.filter((t) => t.Division === div).length,
   }));
 
-  const season = teams[0].Season;
-  
+  const season = hasTeams ? teams![0].Season : null;
 
   const tabs = [
-    {
-      label: "Remove Player",
-      component: (
-        <RemovePlayerFromTeamForm
-          teams={teams}
-          divisions={divisions}
-          onRemove={removePlayersFromTeam}
-        />
-      ),
-    },
-    {
-      label: "Add Player",
-      component: (
-        <AddPlayerToTeamForm
-          teams={teams}
-          divisions={divisions}
-          season={season}
-          onAdd={addPlayerToTeam}
-        />
-      ),
-    },
-    {
-      label: "Remove Team",
-      component: (
-        <RemoveTeamForm
-          teams={teams}
-          divisions={divisions}
-          onRemove={removeTeam}
-        />
-      ),
-    },
-    {
-      label: "Add Team",
-      component: (
-        <AddTeamForm divisionCounts={divisionCounts} onAdd={addTeam} />
-      ),
-    },
+    ...(hasTeams
+      ? [
+          {
+            label: "Remove Player",
+            component: (
+              <RemovePlayerFromTeamForm
+                teams={teams!}
+                divisions={divisions}
+                onRemove={removePlayersFromTeam}
+              />
+            ),
+          },
+          {
+            label: "Add Player",
+            component: (
+              <AddPlayerToTeamForm
+                teams={teams!}
+                divisions={divisions}
+                season={season!}
+                onAdd={addPlayerToTeam}
+              />
+            ),
+          },
+          {
+            label: "Remove Team",
+            component: (
+              <RemoveTeamForm
+                teams={teams!}
+                divisions={divisions}
+                onRemove={removeTeam}
+              />
+            ),
+          },
+          {
+            label: "Add Team",
+            component: (
+              <AddTeamForm divisionCounts={divisionCounts} onAdd={addTeam} />
+            ),
+          },
+        ]
+      : []),
     {
       label: "Insert Rosters",
       component: <CSVImportComponent />,
