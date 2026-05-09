@@ -1,11 +1,11 @@
 CREATE SCHEMA IF NOT EXISTS "fantasy";
 --> statement-breakpoint
-CREATE TABLE "fantasy"."admin" (
+CREATE TABLE IF NOT EXISTS "fantasy"."admin" (
 	"adminid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."leaderboard" (
+CREATE TABLE IF NOT EXISTS "fantasy"."leaderboard" (
 	"leaderboardid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"scheduleid" uuid NOT NULL,
 	"matchlink" text,
@@ -13,7 +13,7 @@ CREATE TABLE "fantasy"."leaderboard" (
 	CONSTRAINT "chk_leaderboard_match_link" CHECK (matchlink ~* '^https://overstat.gg/tournament/vesa(?:w|%20)?league/[0-9]+'::text)
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."pick" (
+CREATE TABLE IF NOT EXISTS "fantasy"."pick" (
 	"pickid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"submittedon" timestamp with time zone DEFAULT now() NOT NULL,
 	"submitterid" text NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE "fantasy"."pick" (
 	CONSTRAINT "chk_players_distinct" CHECK ((player1id <> player2id) AND (player1id <> player3id) AND (player2id <> player3id))
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."player" (
+CREATE TABLE IF NOT EXISTS "fantasy"."player" (
 	"playerid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"os_link" text NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE "fantasy"."player" (
 	CONSTRAINT "chk_player_os_link" CHECK (os_link ~ '^https://overstat.gg/player/[0-9]+$'::text)
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."playermatchresult" (
+CREATE TABLE IF NOT EXISTS "fantasy"."playermatchresult" (
 	"playerresultid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"playerid" uuid NOT NULL,
 	"leaderboardid" uuid NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE "fantasy"."playermatchresult" (
 	CONSTRAINT "uq_playermatchresult_player_leaderboard" UNIQUE("playerid","leaderboardid")
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."playerpick" (
+CREATE TABLE IF NOT EXISTS "fantasy"."playerpick" (
 	"playerpickid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"pickid" uuid NOT NULL,
 	"playerid" uuid NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE "fantasy"."playerpick" (
 	CONSTRAINT "uq_playerpick_pick_player" UNIQUE("pickid","playerid")
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."playerseason" (
+CREATE TABLE IF NOT EXISTS "fantasy"."playerseason" (
 	"playerseasonid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"playerid" uuid NOT NULL,
 	"season" smallint NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE "fantasy"."playerseason" (
 	CONSTRAINT "uq_playerseason_player_season" UNIQUE("playerid","season")
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."schedule" (
+CREATE TABLE IF NOT EXISTS "fantasy"."schedule" (
 	"scheduleid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"season" smallint NOT NULL,
 	"week" smallint NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE "fantasy"."schedule" (
 	CONSTRAINT "schedule_division_check" CHECK ((division >= 1) AND (division <= 7))
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."team" (
+CREATE TABLE IF NOT EXISTS "fantasy"."team" (
 	"teamid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"division" smallint NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE "fantasy"."team" (
 	CONSTRAINT "team_division_check" CHECK ((division >= 1) AND (division <= 7))
 );
 --> statement-breakpoint
-CREATE TABLE "fantasy"."teampick" (
+CREATE TABLE IF NOT EXISTS "fantasy"."teampick" (
 	"teampickid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"pickid" uuid NOT NULL,
 	"teamid" uuid NOT NULL,
