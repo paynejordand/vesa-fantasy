@@ -8,7 +8,7 @@ CREATE TABLE "fantasy"."admin" (
 CREATE TABLE "fantasy"."leaderboard" (
 	"leaderboardid" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"scheduleid" uuid NOT NULL,
-	"matchlink" text NOT NULL,
+	"matchlink" text,
 	CONSTRAINT "uq_leaderboard_scheduleid" UNIQUE("scheduleid"),
 	CONSTRAINT "chk_leaderboard_match_link" CHECK (matchlink ~* '^https://overstat.gg/tournament/vesa(?:w|%20)?league/[0-9]+'::text)
 );
@@ -95,8 +95,6 @@ CREATE TABLE "fantasy"."teampick" (
 	CONSTRAINT "uq_teampick_pick_team" UNIQUE("pickid","teamid")
 );
 --> statement-breakpoint
-DROP TABLE "teams" CASCADE;--> statement-breakpoint
-DROP TABLE "stinkerbot_channels" CASCADE;--> statement-breakpoint
 ALTER TABLE "fantasy"."leaderboard" ADD CONSTRAINT "leaderboard_scheduleid_fkey" FOREIGN KEY ("scheduleid") REFERENCES "fantasy"."schedule"("scheduleid") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "fantasy"."pick" ADD CONSTRAINT "pick_leaderboardid_fkey" FOREIGN KEY ("leaderboardid") REFERENCES "fantasy"."leaderboard"("leaderboardid") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "fantasy"."pick" ADD CONSTRAINT "pick_player1id_fkey" FOREIGN KEY ("player1id") REFERENCES "fantasy"."player"("playerid") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
