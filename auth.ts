@@ -11,16 +11,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, profile }) {
       if (profile) {
-        token.username = profile.username;
         token.discordId = profile.id;
-        console.log("Profile and token in JWT callback:");
-        console.log(profile);
-        console.log(token);
       }
       return token;
     },
     async session({ session, token }) {
-      session.user.name = token.username as string;
       session.user.id = token.discordId as string;
       return session;
     },

@@ -1,0 +1,822 @@
+{
+  "id": "59dceb0f-a043-4365-bb1d-7671b586ccbf",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "fantasy.admin": {
+      "name": "admin",
+      "schema": "fantasy",
+      "columns": {
+        "adminid": {
+          "name": "adminid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "fantasy.leaderboard": {
+      "name": "leaderboard",
+      "schema": "fantasy",
+      "columns": {
+        "leaderboardid": {
+          "name": "leaderboardid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "scheduleid": {
+          "name": "scheduleid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "matchlink": {
+          "name": "matchlink",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "leaderboard_scheduleid_fkey": {
+          "name": "leaderboard_scheduleid_fkey",
+          "tableFrom": "leaderboard",
+          "tableTo": "schedule",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "scheduleid"
+          ],
+          "columnsTo": [
+            "scheduleid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_leaderboard_scheduleid": {
+          "name": "uq_leaderboard_scheduleid",
+          "nullsNotDistinct": false,
+          "columns": [
+            "scheduleid"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "chk_leaderboard_match_link": {
+          "name": "chk_leaderboard_match_link",
+          "value": "matchlink ~* '^https://overstat.gg/tournament/vesa(?:w|%20)?league/[0-9]+'::text"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "fantasy.pick": {
+      "name": "pick",
+      "schema": "fantasy",
+      "columns": {
+        "pickid": {
+          "name": "pickid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "submittedon": {
+          "name": "submittedon",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "submitterid": {
+          "name": "submitterid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submittername": {
+          "name": "submittername",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "leaderboardid": {
+          "name": "leaderboardid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "teamid": {
+          "name": "teamid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "player1id": {
+          "name": "player1id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "player2id": {
+          "name": "player2id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "player3id": {
+          "name": "player3id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        }
+      },
+      "indexes": {
+        "idx_pick_leaderboard": {
+          "name": "idx_pick_leaderboard",
+          "columns": [
+            {
+              "expression": "leaderboardid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pick_leaderboardid_fkey": {
+          "name": "pick_leaderboardid_fkey",
+          "tableFrom": "pick",
+          "tableTo": "leaderboard",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "leaderboardid"
+          ],
+          "columnsTo": [
+            "leaderboardid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "pick_player1id_fkey": {
+          "name": "pick_player1id_fkey",
+          "tableFrom": "pick",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "player1id"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "pick_player2id_fkey": {
+          "name": "pick_player2id_fkey",
+          "tableFrom": "pick",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "player2id"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "pick_player3id_fkey": {
+          "name": "pick_player3id_fkey",
+          "tableFrom": "pick",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "player3id"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "pick_teamid_fkey": {
+          "name": "pick_teamid_fkey",
+          "tableFrom": "pick",
+          "tableTo": "team",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "teamid"
+          ],
+          "columnsTo": [
+            "teamid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_pick_submitter_leaderboard": {
+          "name": "uq_pick_submitter_leaderboard",
+          "nullsNotDistinct": false,
+          "columns": [
+            "submitterid",
+            "leaderboardid"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "chk_players_distinct": {
+          "name": "chk_players_distinct",
+          "value": "(player1id <> player2id) AND (player1id <> player3id) AND (player2id <> player3id)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "fantasy.player": {
+      "name": "player",
+      "schema": "fantasy",
+      "columns": {
+        "playerid": {
+          "name": "playerid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "os_link": {
+          "name": "os_link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_player_os_link": {
+          "name": "uq_player_os_link",
+          "nullsNotDistinct": false,
+          "columns": [
+            "os_link"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "chk_player_os_link": {
+          "name": "chk_player_os_link",
+          "value": "os_link ~ '^https://overstat.gg/player/[0-9]+$'::text"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "fantasy.playermatchresult": {
+      "name": "playermatchresult",
+      "schema": "fantasy",
+      "columns": {
+        "playerresultid": {
+          "name": "playerresultid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "playerid": {
+          "name": "playerid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "leaderboardid": {
+          "name": "leaderboardid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "points": {
+          "name": "points",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "playermatchresult_playerid_fkey": {
+          "name": "playermatchresult_playerid_fkey",
+          "tableFrom": "playermatchresult",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "playerid"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "playermatchresult_leaderboardid_fkey": {
+          "name": "playermatchresult_leaderboardid_fkey",
+          "tableFrom": "playermatchresult",
+          "tableTo": "leaderboard",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "leaderboardid"
+          ],
+          "columnsTo": [
+            "leaderboardid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_playermatchresult_player_leaderboard": {
+          "name": "uq_playermatchresult_player_leaderboard",
+          "nullsNotDistinct": false,
+          "columns": [
+            "playerid",
+            "leaderboardid"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "fantasy.playerpick": {
+      "name": "playerpick",
+      "schema": "fantasy",
+      "columns": {
+        "playerpickid": {
+          "name": "playerpickid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "pickid": {
+          "name": "pickid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "playerid": {
+          "name": "playerid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "points": {
+          "name": "points",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "playerpick_pickid_fkey": {
+          "name": "playerpick_pickid_fkey",
+          "tableFrom": "playerpick",
+          "tableTo": "pick",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "pickid"
+          ],
+          "columnsTo": [
+            "pickid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "playerpick_playerid_fkey": {
+          "name": "playerpick_playerid_fkey",
+          "tableFrom": "playerpick",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "playerid"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_playerpick_pick_player": {
+          "name": "uq_playerpick_pick_player",
+          "nullsNotDistinct": false,
+          "columns": [
+            "pickid",
+            "playerid"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "fantasy.playerseason": {
+      "name": "playerseason",
+      "schema": "fantasy",
+      "columns": {
+        "playerseasonid": {
+          "name": "playerseasonid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "playerid": {
+          "name": "playerid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "season": {
+          "name": "season",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "divisions": {
+          "name": "divisions",
+          "type": "smallint[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "overallpoints": {
+          "name": "overallpoints",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "gamesplayed": {
+          "name": "gamesplayed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "playerseason_playerid_fkey": {
+          "name": "playerseason_playerid_fkey",
+          "tableFrom": "playerseason",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "playerid"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_playerseason_player_season": {
+          "name": "uq_playerseason_player_season",
+          "nullsNotDistinct": false,
+          "columns": [
+            "playerid",
+            "season"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "fantasy.schedule": {
+      "name": "schedule",
+      "schema": "fantasy",
+      "columns": {
+        "scheduleid": {
+          "name": "scheduleid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "season": {
+          "name": "season",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "week": {
+          "name": "week",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "division": {
+          "name": "division",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gamedate": {
+          "name": "gamedate",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_schedule_season_week_division": {
+          "name": "uq_schedule_season_week_division",
+          "nullsNotDistinct": false,
+          "columns": [
+            "season",
+            "week",
+            "division"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "schedule_week_check": {
+          "name": "schedule_week_check",
+          "value": "(week >= 1) AND (week <= 7)"
+        },
+        "schedule_division_check": {
+          "name": "schedule_division_check",
+          "value": "(division >= 1) AND (division <= 7)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "fantasy.team": {
+      "name": "team",
+      "schema": "fantasy",
+      "columns": {
+        "teamid": {
+          "name": "teamid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "division": {
+          "name": "division",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "season": {
+          "name": "season",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weeksplayed": {
+          "name": "weeksplayed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "overallpoints": {
+          "name": "overallpoints",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "player1id": {
+          "name": "player1id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "player2id": {
+          "name": "player2id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "player3id": {
+          "name": "player3id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "team_player1id_fkey": {
+          "name": "team_player1id_fkey",
+          "tableFrom": "team",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "player1id"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "team_player2id_fkey": {
+          "name": "team_player2id_fkey",
+          "tableFrom": "team",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "player2id"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "team_player3id_fkey": {
+          "name": "team_player3id_fkey",
+          "tableFrom": "team",
+          "tableTo": "player",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "player3id"
+          ],
+          "columnsTo": [
+            "playerid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_players_distinct": {
+          "name": "chk_players_distinct",
+          "value": "((player1id IS NULL) OR (player2id IS NULL) OR (player1id <> player2id)) AND ((player1id IS NULL) OR (player3id IS NULL) OR (player1id <> player3id)) AND ((player2id IS NULL) OR (player3id IS NULL) OR (player2id <> player3id))"
+        },
+        "team_division_check": {
+          "name": "team_division_check",
+          "value": "(division >= 1) AND (division <= 7)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "fantasy.teampick": {
+      "name": "teampick",
+      "schema": "fantasy",
+      "columns": {
+        "teampickid": {
+          "name": "teampickid",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "pickid": {
+          "name": "pickid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "teamid": {
+          "name": "teamid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "points": {
+          "name": "points",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "teampick_pickid_fkey": {
+          "name": "teampick_pickid_fkey",
+          "tableFrom": "teampick",
+          "tableTo": "pick",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "pickid"
+          ],
+          "columnsTo": [
+            "pickid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "teampick_teamid_fkey": {
+          "name": "teampick_teamid_fkey",
+          "tableFrom": "teampick",
+          "tableTo": "team",
+          "schemaTo": "fantasy",
+          "columnsFrom": [
+            "teamid"
+          ],
+          "columnsTo": [
+            "teamid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_teampick_pick_team": {
+          "name": "uq_teampick_pick_team",
+          "nullsNotDistinct": false,
+          "columns": [
+            "pickid",
+            "teamid"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {
+    "fantasy": "fantasy"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

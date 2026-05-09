@@ -12,6 +12,7 @@ interface AddTeamComponentProps {
   onAdd: (
     teamName: string,
     division: number,
+    season: number,
     players: { name: string; osLink: string }[],
   ) => Promise<ActionResult>;
 }
@@ -25,6 +26,7 @@ export function AddTeamForm({ divisionCounts, onAdd }: AddTeamComponentProps) {
     { name: "", osLink: "" },
   ]);
   const [error, setError] = useState<string | null>(null);
+  const [season, setSeason] = useState<number | null>(null);
 
   const availableDivisions = divisionCounts.filter((d) => d.count < 20);
 
@@ -51,13 +53,14 @@ export function AddTeamForm({ divisionCounts, onAdd }: AddTeamComponentProps) {
   const canSubmit =
     teamName.trim() !== "" &&
     selectedDivision !== null &&
+    season !== null &&
     validCount >= 1 &&
     !hasPartial;
 
   async function handleSubmit() {
     if (!canSubmit || !selectedDivision) return;
     setError(null);
-    const result = await onAdd(teamName, selectedDivision, players);
+    const result = await onAdd(teamName, selectedDivision, season, players);
     if (!result.success) {
       setError(result.message);
       return;
@@ -86,6 +89,13 @@ export function AddTeamForm({ divisionCounts, onAdd }: AddTeamComponentProps) {
           </option>
         ))}
       </select>
+
+      <input
+        type="number"
+        placeholder="Season"
+        value={season ?? ""}
+        onChange={(e) => setSeason(Number(e.target.value))}
+      />
 
       {selectedDivision && (
         <>

@@ -1,26 +1,19 @@
-export interface Player {
-  PlayerID?: string;
-  Name: string;
-  OS_Link: string;
-  OverallPoints?: number;
-  Divisions?: number[];
-  GamesPlayed?: number;
-}
+import {
+  LeaderboardSelect,
+  PlayerSelect,
+  PlayerMatchResultSelect,
+} from "@/app/db/schema";
 
-export interface Team {
-  TeamID?: string;
-  Name: string;
-  Division: number;
-  WeeksPlayed?: number;
-  OverallPoints?: number;
-  Player1ID?: string | null;
-  Player2ID?: string | null;
-  Player3ID?: string | null;
+export interface Player extends PlayerSelect {
+  overallpoints: number;
+  divisions: number[];
+  gamesplayed: number;
 }
 
 export interface TeamWithPlayers {
   TeamID: string;
   Name: string;
+  Season: number;
   Division: number;
   Player1ID: string | null;
   Player1Name: string | null;
@@ -33,42 +26,15 @@ export interface TeamWithPlayers {
   Player3OSLink: string | null;
 }
 
-export interface Pick {
-  PickID?: string;
+export interface LeaderboardWithPickNames extends LeaderboardSelect {
   Division: number;
   Week: number;
-  SubmittedOn?: Date;
-  SubmittedBy: string;
-  Score?: number;
-  TeamID: string;
-  Player1ID: string;
-  Player2ID: string;
-  Player3ID: string;
-  LeaderboardID?: string | null;
-  P1Score?: number;
-  P2Score?: number;
-  P3Score?: number;
-  TScore?: number;
-}
-
-export interface Leaderboard {
-  LeaderboardID?: string;
-  Division: number;
-  Week: number;
-  MatchLink: string;
-}
-
-export interface LeaderboardWithPicks extends Leaderboard {
-  Picks: Pick[];
-}
-
-export interface LeaderboardWithPickNames extends Leaderboard {
   Picks: {
     PickID: string;
     SubmittedOn: Date;
     SubmittedBy: string;
     Score: number;
-    LeaderboardID: string | null;
+    LeaderboardID: string;
     TeamName: string;
     Player1Name: string;
     Player2Name: string;
@@ -78,6 +44,10 @@ export interface LeaderboardWithPickNames extends Leaderboard {
     P3Score: number;
     TScore: number;
   }[];
+}
+
+export interface PlayerResults extends PlayerMatchResultSelect {
+  Name: string;
 }
 
 export interface PlayerStat {
@@ -94,12 +64,4 @@ export interface SessionUser {
   image: string;
   role: string;
   id: string;
-}
-
-export interface Schedule {
-  ScheduleID: string;
-  Season: number;
-  Week: number;
-  Division: number;
-  GameDate: Date;
 }

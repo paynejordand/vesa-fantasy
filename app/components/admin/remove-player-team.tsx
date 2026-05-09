@@ -2,12 +2,18 @@
 
 import { useState } from "react";
 import { ActionResult } from "@/app/db/actions";
-import { Player, TeamWithPlayers } from "@/app/db/definitions";
+import { TeamWithPlayers } from "@/app/db/definitions";
 
 interface RemovePlayersComponentProps {
   teams: TeamWithPlayers[];
   divisions: number[];
   onRemove: (teamID: string, playerIDs: string[]) => Promise<ActionResult>;
+}
+
+interface PlayerRemoveProp {
+  PlayerID: string, 
+  Name: string,
+  OS_Link: string,
 }
 
 export function RemovePlayerFromTeamForm({
@@ -22,7 +28,7 @@ export function RemovePlayerFromTeamForm({
   const filteredTeams = teams.filter((t) => t.Division === selectedDivision);
   const selectedTeam = teams.find((t) => t.TeamID === selectedTeamID);
 
-  const players: Player[] = selectedTeam
+  const players: PlayerRemoveProp[] = selectedTeam
     ? [
         {
           PlayerID: selectedTeam.Player1ID ?? "",
