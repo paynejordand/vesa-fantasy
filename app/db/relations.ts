@@ -3,17 +3,17 @@ import { playerInFantasy, teamInFantasy, pickInFantasy, leaderboardInFantasy } f
 
 export const teamInFantasyRelations = relations(teamInFantasy, ({one, many}) => ({
 	playerInFantasy_player1Id: one(playerInFantasy, {
-		fields: [teamInFantasy.player1Id],
+		fields: [teamInFantasy.player1id],
 		references: [playerInFantasy.playerid],
 		relationName: "teamInFantasy_player1Id_playerInFantasy_playerid"
 	}),
 	playerInFantasy_player2Id: one(playerInFantasy, {
-		fields: [teamInFantasy.player2Id],
+		fields: [teamInFantasy.player2id],
 		references: [playerInFantasy.playerid],
 		relationName: "teamInFantasy_player2Id_playerInFantasy_playerid"
 	}),
 	playerInFantasy_player3Id: one(playerInFantasy, {
-		fields: [teamInFantasy.player3Id],
+		fields: [teamInFantasy.player3id],
 		references: [playerInFantasy.playerid],
 		relationName: "teamInFantasy_player3Id_playerInFantasy_playerid"
 	}),
@@ -43,17 +43,17 @@ export const playerInFantasyRelations = relations(playerInFantasy, ({many}) => (
 
 export const pickInFantasyRelations = relations(pickInFantasy, ({one}) => ({
 	playerInFantasy_player1Id: one(playerInFantasy, {
-		fields: [pickInFantasy.player1Id],
+		fields: [pickInFantasy.player1id],
 		references: [playerInFantasy.playerid],
 		relationName: "pickInFantasy_player1Id_playerInFantasy_playerid"
 	}),
 	playerInFantasy_player2Id: one(playerInFantasy, {
-		fields: [pickInFantasy.player2Id],
+		fields: [pickInFantasy.player2id],
 		references: [playerInFantasy.playerid],
 		relationName: "pickInFantasy_player2Id_playerInFantasy_playerid"
 	}),
 	playerInFantasy_player3Id: one(playerInFantasy, {
-		fields: [pickInFantasy.player3Id],
+		fields: [pickInFantasy.player3id],
 		references: [playerInFantasy.playerid],
 		relationName: "pickInFantasy_player3Id_playerInFantasy_playerid"
 	}),
