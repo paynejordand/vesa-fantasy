@@ -16,42 +16,54 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
+  params: Promise<{ season: string }>;
   searchParams: Promise<{
     div?: string;
     week?: string;
   }>;
 }
 
-export default async function Page({ searchParams }: PageProps) {
+export default async function Page({ params, searchParams }: PageProps) {
   const user = await getUser();
 
+  const { season } = await params;
   const { div, week } = await searchParams;
 
   const division = clamp(1, 7, div ? Number(div) : 1);
   const weekNumber = clamp(1, 7, week ? Number(week) : 1);
 
   const leaderboard = await getLeaderboardByDivisionAndWeek(
-    13,
+    Number(season),
     division,
     weekNumber,
   );
 
+  if (!leaderboard) {
+    return (
+      <div className="text-center text-red-600">
+        <p>
+          You are probably on the wrong page.
+        </p>
+      </div>
+    );
+  }
+
   const playerResults = await getPlayerResultsByLeaderboardID(
-    leaderboard!.leaderboardid,
+    leaderboard.leaderboardid,
   );
   return (
     <div className="flex flex-col">
-      {leaderboard?.matchlink ? (
+      {leaderboard.matchlink ? (
         <>
           <Leaderboard leaderboard={leaderboard} />
           <PlayerResultsComponent playerResults={playerResults!} />
         </>
       ) : (
         <p className="text-center text-red-600">
-          No leaderboard data available for Div {division}, Week {weekNumber}
+          The draft for Season {season} - Div {division}, Week {weekNumber} has not been scored yet
         </p>
       )}
-      {user?.role === "Admin" && !leaderboard?.matchlink && (
+      {user?.role === "Admin" && !leaderboard.matchlink && (
         <CalcLeaderboard division={division} week={weekNumber} />
       )}
     </div>

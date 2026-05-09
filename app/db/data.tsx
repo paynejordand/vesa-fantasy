@@ -16,10 +16,7 @@ import {
   PickSelect,
   playerMatchResultInFantasy,
 } from "@/app/db/schema";
-import {
-  TeamSelect,
-  ScheduleSelect,
-} from "@/app/db/schema";
+import { TeamSelect, ScheduleSelect } from "@/app/db/schema";
 import { adminInFantasy, scheduleInFantasy } from "@/drizzle/schema";
 
 import { asc, desc } from "drizzle-orm/sql/expressions/select";
@@ -280,16 +277,17 @@ export async function getLeaderboardByDivisionAndWeek(
   }
 }
 
-export async function getWeeksAndDivisionsFromSchedule(): Promise<
+export async function getWeeksAndDivisionsFromScheduleBySeason(season: number): Promise<
   { division: number; week: number }[]
 > {
   try {
     const rows = await db
-      .selectDistinct({
+      .select({
         division: scheduleInFantasy.division,
         week: scheduleInFantasy.week,
       })
       .from(scheduleInFantasy)
+      .where(eq(scheduleInFantasy.season, season))
       .orderBy(asc(scheduleInFantasy.division), asc(scheduleInFantasy.week));
     if (rows.length === 0) return [];
     return rows.map((row) => ({
@@ -471,7 +469,10 @@ export async function getPlayerResultsByLeaderboardID(
     const rows = await db
       .select()
       .from(playerMatchResultInFantasy)
-      .leftJoin(playerInFantasy, eq(playerInFantasy.playerid, playerMatchResultInFantasy.playerid))
+      .leftJoin(
+        playerInFantasy,
+        eq(playerInFantasy.playerid, playerMatchResultInFantasy.playerid),
+      )
       .where(eq(playerMatchResultInFantasy.leaderboardid, leaderboardid));
     if (rows.length === 0) return null;
     return rows.map((row) => ({
@@ -479,10 +480,24 @@ export async function getPlayerResultsByLeaderboardID(
       leaderboardid: row.playermatchresult.leaderboardid,
       playerresultid: row.playermatchresult.playerresultid,
       points: row.playermatchresult.points,
-      Name: row.player!.name
+      Name: row.player!.name,
     }));
   } catch (e) {
     console.error("Database error: ", e);
     throw new Error("Database failed to retrieve LeaderboardID");
+  }
+}
+
+export async function getSeasonsFromSchedule(): Promise<number[] | null> {
+  try {
+    const rows = await db
+      .selectDistinct({ season: scheduleInFantasy.season })
+      .from(scheduleInFantasy)
+      .orderBy(desc(scheduleInFantasy.season));
+    if (rows.length === 0) return null;
+    return rows.map((row) => row.season);
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve seasons");
   }
 }

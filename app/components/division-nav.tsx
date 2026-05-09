@@ -1,4 +1,4 @@
-import { getWeeksAndDivisionsFromSchedule } from "@/app/db/data";
+import { getWeeksAndDivisionsFromScheduleBySeason } from "@/app/db/data";
 import Link from "next/link";
 
 interface DivisionWeek {
@@ -6,18 +6,26 @@ interface DivisionWeek {
   week: number;
 }
 
+interface DivisionWrapperProps {
+  route: string;
+  season: number;
+}
+
 interface DivisionNavProps {
   divisionWeeks: DivisionWeek[];
   route: string;
 }
 
-export async function DivisionNavWrapper({ route }: { route: string }) {
-  const divWeeks = await getWeeksAndDivisionsFromSchedule();
-  if (!divWeeks) return <div>Database has no schedule</div>;
+export async function DivisionNavWrapper({
+  route,
+  season,
+}: DivisionWrapperProps) {
+  const divWeeks = await getWeeksAndDivisionsFromScheduleBySeason(season);
+  if (!divWeeks || divWeeks.length === 0) return <div>Database has no leaderboards for this season</div>;
   return <DivisionNav divisionWeeks={divWeeks} route={route} />;
 }
 
-export function DivisionNav({ divisionWeeks, route }: DivisionNavProps) {
+function DivisionNav({ divisionWeeks, route }: DivisionNavProps) {
   const grouped = divisionWeeks.reduce<Record<number, number[]>>(
     (acc, { division, week }) => {
       if (!acc[division]) acc[division] = [];
