@@ -31,7 +31,7 @@ export default async function Page({ searchParams }: PageProps) {
 
   const { div, week } = await searchParams;
 
-  const division = clamp(1, 7, div ? Number(div) : 1);
+  const division = clamp(1, 8, div ? Number(div) : 1);
   const weekNumber = clamp(1, 7, week ? Number(week) : 1);
 
   const [players, teams, pick, gamedate, leaderboardID] = await Promise.all([
