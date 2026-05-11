@@ -29,7 +29,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   const { season } = await params;
   const { div, week } = await searchParams;
 
-  const division = clamp(1, 7, div ? Number(div) : 1);
+  const division = clamp(1, 8, div ? Number(div) : 1);
   const weekNumber = clamp(1, 7, week ? Number(week) : 1);
 
   const leaderboard = await getLeaderboardByDivisionAndWeek(
