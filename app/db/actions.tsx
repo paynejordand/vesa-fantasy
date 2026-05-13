@@ -2,7 +2,6 @@
 
 import { db, txDB } from "@/app/db/db";
 import { sql as drizzleSQL, eq, and, or } from "drizzle-orm";
-import { PlayerStat } from "@/app/db/definitions";
 import {
   getTeamIDByTeamNameAndDivision,
   getPlayerIDByPlayerLink,
@@ -104,27 +103,29 @@ export async function handleTeamScoreInDB(
             eq(pickInFantasy.leaderboardid, leaderboardid),
           ),
         );
-      picks.forEach(async (pick) => {
-        await tx
-          .insert(teamPickInFantasy)
-          .values({
-            pickid: pick.pickid,
-            teamid: teamid,
-            points: String(points),
-          })
-          .onConflictDoUpdate({
-            target: [teamPickInFantasy.pickid, teamPickInFantasy.teamid],
-            set: {
-              points: drizzleSQL.raw(`EXCLUDED.points`),
-            },
-          });
-        await tx
-          .update(pickInFantasy)
-          .set({
-            score: drizzleSQL.raw(`score + ${points}`),
-          })
-          .where(eq(pickInFantasy.pickid, pick.pickid));
-      });
+      await Promise.all(
+        picks.map(async (pick) => {
+          await tx
+            .insert(teamPickInFantasy)
+            .values({
+              pickid: pick.pickid,
+              teamid: teamid,
+              points: String(points),
+            })
+            .onConflictDoUpdate({
+              target: [teamPickInFantasy.pickid, teamPickInFantasy.teamid],
+              set: {
+                points: drizzleSQL.raw(`EXCLUDED.points`),
+              },
+            });
+          await tx
+            .update(pickInFantasy)
+            .set({
+              score: drizzleSQL.raw(`score + ${points}`),
+            })
+            .where(eq(pickInFantasy.pickid, pick.pickid));
+        }),
+      );
     });
   } catch (error) {
     console.error("Transaction failed, all changes rolled back:", error);
@@ -179,37 +180,39 @@ export async function handlePlayerScoreInDB(
           ),
         ),
       );
-    picks.forEach(async (pick) => {
-      await tx
-        .insert(playerPickInFantasy)
-        .values({
-          pickid: pick.pickid,
-          playerid: playerid,
-          points: String(points),
-        })
-        .onConflictDoUpdate({
-          target: [playerPickInFantasy.pickid, playerPickInFantasy.playerid],
-          set: {
-            points: drizzleSQL.raw(`EXCLUDED.points`),
-          },
-        })
-        .returning({ playerpickid: playerPickInFantasy.playerpickid });
-      await tx
-        .update(pickInFantasy)
-        .set({
-          score: drizzleSQL.raw(`score + ${points}`),
-        })
-        .where(
-          and(
-            or(
-              eq(pickInFantasy.player1id, playerid),
-              eq(pickInFantasy.player2id, playerid),
-              eq(pickInFantasy.player3id, playerid),
+    await Promise.all(
+      picks.map(async (pick) => {
+        await tx
+          .insert(playerPickInFantasy)
+          .values({
+            pickid: pick.pickid,
+            playerid: playerid,
+            points: String(points),
+          })
+          .onConflictDoUpdate({
+            target: [playerPickInFantasy.pickid, playerPickInFantasy.playerid],
+            set: {
+              points: drizzleSQL.raw(`EXCLUDED.points`),
+            },
+          })
+          .returning({ playerpickid: playerPickInFantasy.playerpickid });
+        await tx
+          .update(pickInFantasy)
+          .set({
+            score: drizzleSQL.raw(`score + ${points}`),
+          })
+          .where(
+            and(
+              or(
+                eq(pickInFantasy.player1id, playerid),
+                eq(pickInFantasy.player2id, playerid),
+                eq(pickInFantasy.player3id, playerid),
+              ),
+              eq(pickInFantasy.pickid, pick.pickid),
             ),
-            eq(pickInFantasy.pickid, pick.pickid),
-          ),
-        );
-    });
+          );
+      }),
+    );
   });
 }
 
@@ -273,65 +276,46 @@ export async function scoreDraft(
     };
   }
 
-  teams.forEach(
-    async (team: {
-      overall_stats: { name: string; placementArray: number[] };
-    }) => {
-      let score = 0;
-      team.overall_stats.placementArray.forEach((placement: number) => {
-        score += placementScores[placement as keyof typeof placementScores];
-      });
+  const teamScores = new Array<{ teamID: string; score: number }>();
+  const playerScores = new Array<{ playerID: string; score: number }>();
 
-      try {
-        const teamID = await getTeamIDByTeamNameAndDivision(
-          team.overall_stats.name.replace(/\'/g, ""),
-          division,
-        );
-        if (teamID === null) return;
-        await handleTeamScoreInDB(teamID, score, leaderboardid);
-      } catch (e) {
-        console.error("Database Error: ", e);
-        return {
-          success: false,
-          message: "Failed to update team score in the database.",
-        };
-      }
-    },
-  );
+  for (const team of teams) {
+    const tScore = team.overall_stats.placementArray.reduce(
+      (acc: number, placement: number) => {
+        return acc + placementScores[placement as keyof typeof placementScores];
+      },
+      0,
+    );
 
-  teams.forEach(
-    (team: {
-      overall_stats: { name: string };
-      player_stats: Array<PlayerStat>;
-    }) => {
-      const teamStats = {
-        teamName: team.overall_stats.name,
-        players: team.player_stats,
-      };
+    const teamID = await getTeamIDByTeamNameAndDivision(
+      team.overall_stats.name.replace(/\'/g, ""),
+      division,
+    );
+    if (teamID === null) continue;
+    teamScores.push({ teamID: teamID, score: tScore });
 
-      teamStats.players.forEach(async (player) => {
-        let score = 0;
-        score += player.damageDealt * damageScore;
-        score += player.assists * assistScore;
-        score += player.knockdowns * knockdownScore;
-        score += player.kills * killScore;
-        score += player.respawnsGiven * respawnScore;
+    for (const player of team.player_stats) {
+      const pLink = `https://overstat.gg/player/${player.playerId}`;
+      const playerID = await getPlayerIDByPlayerLink(pLink);
+      if (playerID === null) continue;
+      let pScore = 0;
+      pScore += player.damageDealt * damageScore;
+      pScore += player.assists * assistScore;
+      pScore += player.knockdowns * knockdownScore;
+      pScore += player.kills * killScore;
+      pScore += player.respawnsGiven * respawnScore;
+      playerScores.push({ playerID: playerID, score: pScore });
+    }
+  }
 
-        try {
-          const pLink = `https://overstat.gg/player/${player.playerId}`;
-          const playerID = await getPlayerIDByPlayerLink(pLink);
-          if (playerID === null) return;
-          await handlePlayerScoreInDB(playerID, score, leaderboardid);
-        } catch (e) {
-          console.error(e);
-          return {
-            success: false,
-            message: "Failed to update player score in the database.",
-          };
-        }
-      });
-    },
-  );
+  await Promise.all([
+    ...teamScores.map(async ({ teamID, score }) => {
+      await handleTeamScoreInDB(teamID, score, leaderboardid);
+    }),
+    ...playerScores.map(async ({ playerID, score }) => {
+      await handlePlayerScoreInDB(playerID, score, leaderboardid);
+    }),
+  ]);
   try {
     await insertLeaderboard(scheduleid, matchLink);
   } catch (e) {
