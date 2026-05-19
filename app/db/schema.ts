@@ -81,7 +81,7 @@ export const teamInFantasy = fantasy.table(
   {
     teamid: uuid().defaultRandom().primaryKey().notNull(),
     name: text().notNull(),
-    division: smallint().notNull(),
+    division: smallint(),
     season: smallint().notNull(),
     weeksplayed: integer().default(0).notNull(),
     overallpoints: numeric({ precision: 10, scale: 2 }).default("0").notNull(),

@@ -20,7 +20,7 @@ import { TeamSelect, ScheduleSelect } from "@/app/db/schema";
 import { adminInFantasy, scheduleInFantasy } from "@/drizzle/schema";
 
 import { asc, desc } from "drizzle-orm/sql/expressions/select";
-import { eq, and, arrayContains, gt, max } from "drizzle-orm";
+import { eq, and, arrayContains, gt, max, isNotNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 export async function getPickByUserID(
@@ -369,6 +369,7 @@ export async function getTeamsWithPlayerNames(): Promise<
         player3oslink: p3.osLink,
       })
       .from(teamInFantasy)
+      .where(isNotNull(teamInFantasy.division))
       .innerJoin(sq, eq(sq.curr_season, teamInFantasy.season))
       .leftJoin(p1, eq(teamInFantasy.player1id, p1.playerid))
       .leftJoin(p2, eq(teamInFantasy.player2id, p2.playerid))
@@ -379,7 +380,7 @@ export async function getTeamsWithPlayerNames(): Promise<
       TeamID: row.teamid,
       Name: row.name,
       Season: row.season,
-      Division: row.division,
+      Division: row.division!,
       Player1ID: row.player1id,
       Player1Name: row.player1name ?? "",
       Player1OSLink: row.player1oslink ?? "",

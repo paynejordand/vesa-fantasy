@@ -294,7 +294,7 @@ export async function scoreDraft(
       } else {
         await addPlayerToDB(player.name, pLink);
         const newPlayerID = await getPlayerIDByPlayerLink(pLink);
-        playerScores.push({playerID: newPlayerID!, score: pScore})
+        playerScores.push({ playerID: newPlayerID!, score: pScore });
       }
     }
 
@@ -508,16 +508,20 @@ export async function removeTeam(teamIDs: string[]): Promise<ActionResult> {
       );
 
       await txDB.transaction(async (tx) => {
-        await tx.delete(teamInFantasy).where(eq(teamInFantasy.teamid, teamID));
-        for (const playerID of playerIDs) {
-          await tx
-            .update(playerSeasonInFantasy)
-            .set({
-              divisions: drizzleSQL.raw(
-                `array_remove(Fantasy.PlayerSeason.Divisions, ${division}::SMALLINT)`,
-              ),
-            })
-            .where(eq(playerSeasonInFantasy.playerid, playerID));
+        await tx
+          .update(teamInFantasy)
+          .set({ division: null })
+          .where(eq(teamInFantasy.teamid, teamID));
+
+        if (playerIDs.length > 0 && division !== null) {
+          for (const playerID of playerIDs) {
+            await tx
+              .update(playerSeasonInFantasy)
+              .set({
+                divisions: drizzleSQL`array_remove(${playerSeasonInFantasy.divisions}, ${division}::SMALLINT)`,
+              })
+              .where(eq(playerSeasonInFantasy.playerid, playerID));
+          }
         }
       });
     }
@@ -694,7 +698,6 @@ export async function addPlayerToDB(
   osLink: string,
 ): Promise<ActionResult> {
   try {
-
     await db
       .insert(playerInFantasy)
       .values({ name, osLink: osLink })
