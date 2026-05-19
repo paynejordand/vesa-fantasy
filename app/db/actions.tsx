@@ -280,6 +280,24 @@ export async function scoreDraft(
   const playerScores = new Array<{ playerID: string; score: number }>();
 
   for (const team of teams) {
+    for (const player of team.player_stats) {
+      const pScore =
+        player.damageDealt * damageScore +
+        player.assists * assistScore +
+        player.knockdowns * knockdownScore +
+        player.kills * killScore +
+        player.respawnsGiven * respawnScore;
+      const pLink = `https://overstat.gg/player/${player.playerId}`;
+      const playerID = await getPlayerIDByPlayerLink(pLink);
+      if (playerID !== null) {
+        playerScores.push({ playerID: playerID, score: pScore });
+      } else {
+        await addPlayerToDB(player.name, pLink);
+        const newPlayerID = await getPlayerIDByPlayerLink(pLink);
+        playerScores.push({playerID: newPlayerID!, score: pScore})
+      }
+    }
+
     const tScore = team.overall_stats.placementArray.reduce(
       (acc: number, placement: number) => {
         return acc + placementScores[placement as keyof typeof placementScores];
@@ -293,19 +311,6 @@ export async function scoreDraft(
     );
     if (teamID === null) continue;
     teamScores.push({ teamID: teamID, score: tScore });
-
-    for (const player of team.player_stats) {
-      const pLink = `https://overstat.gg/player/${player.playerId}`;
-      const playerID = await getPlayerIDByPlayerLink(pLink);
-      if (playerID === null) continue;
-      let pScore = 0;
-      pScore += player.damageDealt * damageScore;
-      pScore += player.assists * assistScore;
-      pScore += player.knockdowns * knockdownScore;
-      pScore += player.kills * killScore;
-      pScore += player.respawnsGiven * respawnScore;
-      playerScores.push({ playerID: playerID, score: pScore });
-    }
   }
 
   await Promise.all([
@@ -680,6 +685,27 @@ export async function importTeamsFromCSV(
     return {
       success: false,
       message: "A database error occurred during import.",
+    };
+  }
+}
+
+export async function addPlayerToDB(
+  name: string,
+  osLink: string,
+): Promise<ActionResult> {
+  try {
+
+    await db
+      .insert(playerInFantasy)
+      .values({ name, osLink: osLink })
+      .onConflictDoNothing({ target: playerInFantasy.osLink });
+
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "A database error occurred. Please try again.",
     };
   }
 }

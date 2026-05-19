@@ -41,9 +41,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   if (!leaderboard) {
     return (
       <div className="text-center text-red-600">
-        <p>
-          You are probably on the wrong page.
-        </p>
+        <p>You are probably on the wrong page.</p>
       </div>
     );
   }
@@ -53,16 +51,15 @@ export default async function Page({ params, searchParams }: PageProps) {
   );
   return (
     <div className="flex flex-col">
-      {leaderboard.matchlink ? (
-        <>
-          <Leaderboard leaderboard={leaderboard} />
-          <PlayerResultsComponent playerResults={playerResults!} />
-        </>
-      ) : (
+      {!leaderboard.matchlink && (
         <p className="text-center text-red-600">
-          The draft for Season {season} - Div {division}, Week {weekNumber} has not been scored yet
+          The draft for Season {season} - Div {division}, Week {weekNumber} has
+          not been scored yet
         </p>
       )}
+      <Leaderboard leaderboard={leaderboard} />
+      <PlayerResultsComponent playerResults={playerResults} />
+
       {user?.role === "Admin" && !leaderboard.matchlink && (
         <CalcLeaderboard division={division} week={weekNumber} />
       )}

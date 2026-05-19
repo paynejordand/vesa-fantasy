@@ -1,13 +1,13 @@
 import { PlayerResults } from "@/app/db/definitions";
 
 interface PlayerResultsComponentInterface {
-  playerResults: PlayerResults[];
+  playerResults: PlayerResults[] | null;
 }
 
 export function PlayerResultsComponent({
   playerResults,
 }: PlayerResultsComponentInterface) {
-  if (!playerResults) return <></>
+  if (playerResults === null) return <></>
   playerResults.sort((a, b) => Number(b.points) - Number(a.points));
   return (
     <div className="p-4 overflow-x-auto">
