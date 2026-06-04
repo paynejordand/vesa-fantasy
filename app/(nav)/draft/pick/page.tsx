@@ -62,6 +62,9 @@ export default async function Page({ searchParams }: PageProps) {
       <h1 className="w-3/4 text-2xl font-semibold text-black dark:text-zinc-50">
         Div {division}, Week {week} Draft
       </h1>
+      {user?.id === "700903525424824372" && (
+        <p className="w-3/4 text-medium text-red-600">Hi Nate :)</p>
+      )}
       {hasStarted ? (
         <p className="w-3/4 text-medium text-red-600">
           Draft was locked at the scheduled game start time.
