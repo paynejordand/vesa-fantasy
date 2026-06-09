@@ -18,10 +18,11 @@ export function OverallLeaderboard({
     );
   }
   return (
-    <div className="scrollable-table-container overflow-y-auto max-h-108">
+    <div className="scrollable-table-container overflow-y-auto max-h-120">
       <table className="scrollable-table">
         <thead className="sticky top-0 dark:bg-black bg-white">
           <tr>
+            <th>#</th>
             <th>Name</th>
             <th>Total Points</th>
           </tr>
@@ -29,8 +30,9 @@ export function OverallLeaderboard({
         <tbody>
           {entries.map((entry, index) => (
             <tr key={index}>
-              <td className="p-2">{entry.name}</td>
-              <td className="p-2">{entry.totalpoints}</td>
+              <td>{index + 1}</td>
+              <td>{entry.name}</td>
+              <td>{entry.totalpoints}</td>
             </tr>
           ))}
         </tbody>

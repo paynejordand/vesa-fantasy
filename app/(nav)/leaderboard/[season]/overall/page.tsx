@@ -16,7 +16,7 @@ interface PageProps {
 export default async function Page({ params, searchParams }: PageProps) {
   const { season } = await params;
   const { week } = await searchParams;
-  const selectedWeek = Number(week) || 1;
+  const selectedWeek = week ? Number(week) : null;
 
   const summedPicks = await getSummedPicksBySeasonAndWeek(
     Number(season),

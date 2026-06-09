@@ -2,7 +2,7 @@
 import { useRouter, usePathname } from "next/navigation";
 
 interface WeekSelectorProps {
-  currentWeek: number;
+  currentWeek: number | null;
   totalWeeks: number;
 }
 
@@ -11,11 +11,17 @@ export function WeekSelector({ currentWeek, totalWeeks }: WeekSelectorProps) {
   const pathname = usePathname();
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    router.push(`${pathname}?week=${e.target.value}`);
+    const value = e.target.value;
+    if (value === "all") {
+      router.push(pathname); // removes the week param entirely
+    } else {
+      router.push(`${pathname}?week=${value}`);
+    }
   }
 
   return (
-    <select value={currentWeek} onChange={handleChange}>
+    <select value={currentWeek ?? "all"} onChange={handleChange}>
+      <option value="all">All Weeks</option>
       {Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => (
         <option key={week} value={week}>
           Week {week}

@@ -277,9 +277,9 @@ export async function getLeaderboardByDivisionAndWeek(
   }
 }
 
-export async function getWeeksAndDivisionsFromScheduleBySeason(season: number): Promise<
-  { division: number; week: number }[]
-> {
+export async function getWeeksAndDivisionsFromScheduleBySeason(
+  season: number,
+): Promise<{ division: number; week: number }[]> {
   try {
     const rows = await db
       .select({
@@ -505,30 +505,31 @@ export async function getSeasonsFromSchedule(): Promise<number[] | null> {
 
 export async function getSummedPicksBySeasonAndWeek(
   season: number,
-  week: number,
+  week: number | null,
 ) {
   try {
-    const rows = await db.select({
-      name: pickInFantasy.submittername,
-      totalpoints: sum(pickInFantasy.score).as("totalpoints"),
-    })
-    .from(pickInFantasy)
-    .leftJoin(
-      leaderboardInFantasy,
-      eq(pickInFantasy.leaderboardid, leaderboardInFantasy.leaderboardid),
-    )
-    .leftJoin(
-      scheduleInFantasy,
-      eq(leaderboardInFantasy.scheduleid, scheduleInFantasy.scheduleid),
-    )
-    .where(
-      and(
-        eq(scheduleInFantasy.season, season),
-        eq(scheduleInFantasy.week, week),
-      ),
-    )
-    .groupBy(pickInFantasy.submittername)
-    .orderBy(desc(sum(pickInFantasy.score)));
+    const rows = await db
+      .select({
+        name: pickInFantasy.submittername,
+        totalpoints: sum(pickInFantasy.score).as("totalpoints"),
+      })
+      .from(pickInFantasy)
+      .leftJoin(
+        leaderboardInFantasy,
+        eq(pickInFantasy.leaderboardid, leaderboardInFantasy.leaderboardid),
+      )
+      .leftJoin(
+        scheduleInFantasy,
+        eq(leaderboardInFantasy.scheduleid, scheduleInFantasy.scheduleid),
+      )
+      .where(
+        and(
+          eq(scheduleInFantasy.season, season),
+          week ? eq(scheduleInFantasy.week, week) : undefined,
+        ),
+      )
+      .groupBy(pickInFantasy.submittername)
+      .orderBy(desc(sum(pickInFantasy.score)));
     if (rows.length === 0) return null;
     return rows.map((row) => ({
       name: row.name,
