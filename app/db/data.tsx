@@ -20,7 +20,7 @@ import { TeamSelect, ScheduleSelect } from "@/app/db/schema";
 import { adminInFantasy, scheduleInFantasy } from "@/drizzle/schema";
 
 import { asc, desc } from "drizzle-orm/sql/expressions/select";
-import { eq, and, arrayContains, gt, max, isNotNull } from "drizzle-orm";
+import { eq, and, arrayContains, gt, max, isNotNull, sum } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 export async function getPickByUserID(
@@ -500,5 +500,42 @@ export async function getSeasonsFromSchedule(): Promise<number[] | null> {
   } catch (e) {
     console.error("Database error: ", e);
     throw new Error("Database failed to retrieve seasons");
+  }
+}
+
+export async function getSummedPicksBySeasonAndWeek(
+  season: number,
+  week: number,
+) {
+  try {
+    const rows = await db.select({
+      name: pickInFantasy.submittername,
+      totalpoints: sum(pickInFantasy.score).as("totalpoints"),
+    })
+    .from(pickInFantasy)
+    .leftJoin(
+      leaderboardInFantasy,
+      eq(pickInFantasy.leaderboardid, leaderboardInFantasy.leaderboardid),
+    )
+    .leftJoin(
+      scheduleInFantasy,
+      eq(leaderboardInFantasy.scheduleid, scheduleInFantasy.scheduleid),
+    )
+    .where(
+      and(
+        eq(scheduleInFantasy.season, season),
+        eq(scheduleInFantasy.week, week),
+      ),
+    )
+    .groupBy(pickInFantasy.submittername)
+    .orderBy(desc(sum(pickInFantasy.score)));
+    if (rows.length === 0) return null;
+    return rows.map((row) => ({
+      name: row.name,
+      totalpoints: Number(row.totalpoints),
+    }));
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve summed picks");
   }
 }
