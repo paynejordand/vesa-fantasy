@@ -31,8 +31,8 @@ export default async function Page({ searchParams }: PageProps) {
 
   const { div, week } = await searchParams;
 
-  const division = clamp(1, 8, div ? Number(div) : 1);
-  const weekNumber = clamp(1, 7, week ? Number(week) : 1);
+  const division = isNaN(Number(div)) ? 1 : Number(div);
+  const weekNumber = isNaN(Number(week)) ? 1 : Number(week);
 
   const [players, teams, pick, gamedate, leaderboardID] = await Promise.all([
     getPlayersByDivision(division),
@@ -44,11 +44,11 @@ export default async function Page({ searchParams }: PageProps) {
 
   const hasStarted = gamedate && gamedate <= new Date();
 
-  if (!players || !teams) {
+  if (!players || !teams || !leaderboardID) {
     return (
       <div className="flex flex-col items-center justify-center text-center">
         <h1 className="w-3/4 text-2xl font-semibold text-black dark:text-zinc-50">
-          Div {division}, Week {week} Draft
+          Div {division}, Week {weekNumber} Draft
         </h1>
         <p className="w-3/4 text-medium text-red-600">
           Unable to load players or teams for the selected division and week.
@@ -60,7 +60,7 @@ export default async function Page({ searchParams }: PageProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center">
       <h1 className="w-3/4 text-2xl font-semibold text-black dark:text-zinc-50">
-        Div {division}, Week {week} Draft
+        Div {division}, Week {weekNumber} Draft
       </h1>
       {user?.id === "700903525424824372" && (
         <p className="w-3/4 text-medium text-red-600">Hi Nate :)</p>

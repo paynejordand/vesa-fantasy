@@ -6,9 +6,14 @@ import { scoreDraft } from "@/app/db/actions";
 interface CalcLeaderboardProps {
   week: number;
   division: number;
+  isMPFinals: boolean;
 }
 
-export function CalcLeaderboard({ division, week }: CalcLeaderboardProps) {
+export function CalcLeaderboard({
+  division,
+  week,
+  isMPFinals,
+}: CalcLeaderboardProps) {
   const [link, setLink] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -23,6 +28,7 @@ export function CalcLeaderboard({ division, week }: CalcLeaderboardProps) {
               division,
               week,
               formData.get("MatchLink") as string,
+              isMPFinals,
             );
           } catch {
             setError(

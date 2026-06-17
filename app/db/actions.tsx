@@ -244,6 +244,7 @@ export async function scoreDraft(
   division: number,
   week: number,
   matchLink: string,
+  isMPFinals: boolean = false,
 ) {
   const user = await getUser();
   if (user?.role !== "Admin") return null;
@@ -280,13 +281,21 @@ export async function scoreDraft(
   const playerScores = new Array<{ playerID: string; score: number }>();
 
   for (const team of teams) {
+    const multiplier = isMPFinals
+      ? team.matchPointWin
+        ? 1.5
+        : team.matchPointElegible
+          ? 1
+          : 0.5
+      : 1;
     for (const player of team.player_stats) {
       const pScore =
-        player.damageDealt * damageScore +
-        player.assists * assistScore +
-        player.knockdowns * knockdownScore +
-        player.kills * killScore +
-        player.respawnsGiven * respawnScore;
+        (player.damageDealt * damageScore +
+          player.assists * assistScore +
+          player.knockdowns * knockdownScore +
+          player.kills * killScore +
+          player.respawnsGiven * respawnScore) *
+        multiplier;
       const pLink = `https://overstat.gg/player/${player.playerId}`;
       const playerID = await getPlayerIDByPlayerLink(pLink);
       if (playerID !== null) {
@@ -310,7 +319,7 @@ export async function scoreDraft(
       division,
     );
     if (teamID === null) continue;
-    teamScores.push({ teamID: teamID, score: tScore });
+    teamScores.push({ teamID: teamID, score: tScore * multiplier });
   }
 
   await Promise.all([

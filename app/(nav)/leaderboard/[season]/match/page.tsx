@@ -1,5 +1,4 @@
 import { getUser } from "@/app/lib/dal";
-import { clamp } from "@/app/lib/utils";
 import { CalcLeaderboard } from "@/app/components/leaderboard/calc-leaderboard";
 import { Leaderboard } from "@/app/components/leaderboard/leaderboard";
 import { PlayerResultsComponent } from "@/app/components/leaderboard/player-results";
@@ -29,8 +28,10 @@ export default async function Page({ params, searchParams }: PageProps) {
   const { season } = await params;
   const { div, week } = await searchParams;
 
-  const division = clamp(1, 8, div ? Number(div) : 1);
-  const weekNumber = clamp(1, 7, week ? Number(week) : 1);
+  const division = isNaN(Number(div)) ? 1 : Number(div);
+  const weekNumber = isNaN(Number(week)) ? 1 : Number(week);
+
+  const isMPFinals = weekNumber === 7;
 
   const leaderboard = await getLeaderboardByDivisionAndWeek(
     Number(season),
@@ -61,7 +62,7 @@ export default async function Page({ params, searchParams }: PageProps) {
       <PlayerResultsComponent playerResults={playerResults} />
 
       {user?.role === "Admin" && !leaderboard.matchlink && (
-        <CalcLeaderboard division={division} week={weekNumber} />
+        <CalcLeaderboard division={division} week={weekNumber} isMPFinals={isMPFinals} />
       )}
     </div>
   );
