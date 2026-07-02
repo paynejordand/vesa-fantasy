@@ -28,7 +28,7 @@ export default async function Page({ params, searchParams }: PageProps) {
       <h1 className="text-2xl font-bold">Overall Leaderboard</h1>
 
       <div className="flex items-center gap-2">
-        <WeekSelector currentWeek={selectedWeek} totalWeeks={6} />
+        <WeekSelector currentWeek={selectedWeek} totalWeeks={7} />
       </div>
 
       <div className="w-full max-w-3xl">
