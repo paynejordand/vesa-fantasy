@@ -112,8 +112,20 @@ export async function getPlayersByDivision(
         playerSeasonInFantasy,
         eq(playerInFantasy.playerid, playerSeasonInFantasy.playerid),
       )
-      .where(arrayContains(playerSeasonInFantasy.divisions, [division]));
+      .where(
+        and(
+          arrayContains(playerSeasonInFantasy.divisions, [division]),
+          eq(
+            playerSeasonInFantasy.season,
+            db
+              .select({ season: max(playerSeasonInFantasy.season) })
+              .from(playerSeasonInFantasy),
+          ),
+        ),
+      );
+
     if (rows.length === 0) return null;
+
     return rows.map((row) => ({
       playerid: row.player.playerid,
       name: row.player.name,
@@ -135,7 +147,18 @@ export async function getTeamsByDivision(
     const rows = await db
       .select()
       .from(teamInFantasy)
-      .where(eq(teamInFantasy.division, division));
+      .where(
+        and(
+          eq(teamInFantasy.division, division),
+          eq(
+            teamInFantasy.season,
+            db
+              .select({ season: max(teamInFantasy.season) })
+              .from(teamInFantasy),
+          ),
+        ),
+      );
+
     if (rows.length === 0) return null;
     return rows;
   } catch (e) {
@@ -308,6 +331,7 @@ export async function getMatchStartTimeByDivisionAndWeek(
     const rows = await db
       .select({ gamedate: scheduleInFantasy.gamedate })
       .from(scheduleInFantasy)
+      .orderBy(desc(scheduleInFantasy.season))
       .where(
         and(
           eq(scheduleInFantasy.division, division),

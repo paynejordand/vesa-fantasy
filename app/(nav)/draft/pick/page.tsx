@@ -8,7 +8,6 @@ import {
   getLeaderboardIDByDivisionAndWeek,
 } from "@/app/db/data";
 import { submitDraft, deletePickByUserID } from "@/app/db/actions";
-import { clamp } from "@/app/lib/utils";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import Link from "next/link";
