@@ -23,8 +23,22 @@ import { asc, desc } from "drizzle-orm/sql/expressions/select";
 import { eq, and, arrayContains, gt, max, isNotNull, sum } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
+export async function getSeason(): Promise<number | null> {
+  try {
+    const rows = await db
+      .select({ season: max(playerSeasonInFantasy.season) })
+      .from(playerSeasonInFantasy);
+    if (rows.length === 0) return null;
+    return rows[0].season;
+  } catch (e) {
+    console.error("Database error: ", e);
+    throw new Error("Database failed to retrieve Season");
+  }
+}
+
 export async function getPickByUserID(
   userID: string,
+  season: number,
   division: number,
   week: number,
 ): Promise<PickSelect | null> {
@@ -56,6 +70,7 @@ export async function getPickByUserID(
           eq(pickInFantasy.submitterid, userID),
           eq(scheduleInFantasy.division, division),
           eq(scheduleInFantasy.week, week),
+          eq(scheduleInFantasy.season, season),
         ),
       );
     if (rows.length === 0) return null;
@@ -102,6 +117,7 @@ export async function getPlayerIDByPlayerLink(
 }
 
 export async function getPlayersByDivision(
+  season: number,
   division: number,
 ): Promise<Array<Player> | null> {
   try {
@@ -115,12 +131,7 @@ export async function getPlayersByDivision(
       .where(
         and(
           arrayContains(playerSeasonInFantasy.divisions, [division]),
-          eq(
-            playerSeasonInFantasy.season,
-            db
-              .select({ season: max(playerSeasonInFantasy.season) })
-              .from(playerSeasonInFantasy),
-          ),
+          eq(playerSeasonInFantasy.season, season),
         ),
       );
 
@@ -141,6 +152,7 @@ export async function getPlayersByDivision(
 }
 
 export async function getTeamsByDivision(
+  season: number,
   division: number,
 ): Promise<Array<TeamSelect> | null> {
   try {
@@ -150,12 +162,7 @@ export async function getTeamsByDivision(
       .where(
         and(
           eq(teamInFantasy.division, division),
-          eq(
-            teamInFantasy.season,
-            db
-              .select({ season: max(teamInFantasy.season) })
-              .from(teamInFantasy),
-          ),
+          eq(teamInFantasy.season, season),
         ),
       );
 
@@ -422,6 +429,7 @@ export async function getTeamsWithPlayerNames(): Promise<
 }
 
 export async function getLeaderboardIDByDivisionAndWeek(
+  season: number,
   division: number,
   week: number,
 ): Promise<string | null> {
@@ -435,11 +443,12 @@ export async function getLeaderboardIDByDivisionAndWeek(
       )
       .where(
         and(
+          eq(scheduleInFantasy.season, season),
           eq(scheduleInFantasy.division, division),
           eq(scheduleInFantasy.week, week),
         ),
-      )
-      .orderBy(desc(scheduleInFantasy.season));
+      );
+
     if (rows.length === 0) return null;
     return rows[0].leaderboardid;
   } catch (e) {

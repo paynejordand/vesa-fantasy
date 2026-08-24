@@ -6,6 +6,7 @@ import {
   getPickByUserID,
   getMatchStartTimeByDivisionAndWeek,
   getLeaderboardIDByDivisionAndWeek,
+  getSeason,
 } from "@/app/db/data";
 import { submitDraft, deletePickByUserID } from "@/app/db/actions";
 import { redirect } from "next/navigation";
@@ -33,13 +34,30 @@ export default async function Page({ searchParams }: PageProps) {
   const division = isNaN(Number(div)) ? 1 : Number(div);
   const weekNumber = isNaN(Number(week)) ? 1 : Number(week);
 
+  const season = await getSeason();
+
+  if (!season) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center">
+        <h1 className="w-3/4 text-2xl font-semibold text-black dark:text-zinc-50">
+          Div {division}, Week {weekNumber} Draft
+        </h1>
+        <p className="w-3/4 text-medium text-red-600">
+          Unable to load the current season. Please try again later.
+        </p>
+      </div>
+    );
+  }
+
   const [players, teams, pick, gamedate, leaderboardID] = await Promise.all([
-    getPlayersByDivision(division),
-    getTeamsByDivision(division),
-    getPickByUserID(user.id, division, weekNumber),
+    getPlayersByDivision(season, division),
+    getTeamsByDivision(season, division),
+    getPickByUserID(user.id, season, division, weekNumber),
     getMatchStartTimeByDivisionAndWeek(division, weekNumber),
-    getLeaderboardIDByDivisionAndWeek(division, weekNumber),
+    getLeaderboardIDByDivisionAndWeek(season, division, weekNumber),
   ]);
+
+  console.log(leaderboardID, "leaderboardID");
 
   const hasStarted = gamedate && gamedate <= new Date();
 
