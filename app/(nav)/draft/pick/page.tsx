@@ -57,8 +57,6 @@ export default async function Page({ searchParams }: PageProps) {
     getLeaderboardIDByDivisionAndWeek(season, division, weekNumber),
   ]);
 
-  console.log(leaderboardID, "leaderboardID");
-
   const hasStarted = gamedate && gamedate <= new Date();
 
   if (!players || !teams || !leaderboardID) {

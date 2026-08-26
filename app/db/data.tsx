@@ -83,6 +83,7 @@ export async function getPickByUserID(
 
 export async function getTeamIDByTeamNameAndDivision(
   name: string,
+  season: number,
   division: number,
 ): Promise<string | null> {
   try {
@@ -90,7 +91,7 @@ export async function getTeamIDByTeamNameAndDivision(
       .select({ teamid: teamInFantasy.teamid })
       .from(teamInFantasy)
       .where(
-        and(eq(teamInFantasy.name, name), eq(teamInFantasy.division, division)),
+        and(eq(teamInFantasy.name, name), eq(teamInFantasy.division, division), eq(teamInFantasy.season, season)),
       );
     if (rows.length === 0) return null;
     return rows[0].teamid;

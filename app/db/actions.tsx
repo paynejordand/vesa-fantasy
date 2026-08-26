@@ -241,6 +241,7 @@ async function insertLeaderboard(
 }
 
 export async function scoreDraft(
+  season: number,
   division: number,
   week: number,
   matchLink: string,
@@ -316,6 +317,7 @@ export async function scoreDraft(
 
     const teamID = await getTeamIDByTeamNameAndDivision(
       team.overall_stats.name.replace(/\'/g, ""),
+      season,
       division,
     );
     if (teamID === null) continue;

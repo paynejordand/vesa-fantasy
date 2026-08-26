@@ -62,7 +62,7 @@ export default async function Page({ params, searchParams }: PageProps) {
       <PlayerResultsComponent playerResults={playerResults} />
 
       {user?.role === "Admin" && !leaderboard.matchlink && (
-        <CalcLeaderboard division={division} week={weekNumber} isMPFinals={isMPFinals} />
+        <CalcLeaderboard season={Number(season)} division={division} week={weekNumber} isMPFinals={isMPFinals} />
       )}
     </div>
   );

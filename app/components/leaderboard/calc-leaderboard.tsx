@@ -6,10 +6,12 @@ import { scoreDraft } from "@/app/db/actions";
 interface CalcLeaderboardProps {
   week: number;
   division: number;
+  season: number;
   isMPFinals: boolean;
 }
 
 export function CalcLeaderboard({
+  season,
   division,
   week,
   isMPFinals,
@@ -25,6 +27,7 @@ export function CalcLeaderboard({
         action={async (formData: FormData) => {
           try {
             await scoreDraft(
+              season,
               division,
               week,
               formData.get("MatchLink") as string,
